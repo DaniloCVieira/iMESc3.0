@@ -22,7 +22,7 @@ authors:
     affiliation: Universidade Federal de São Paulo
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.6484066
+    value: 10.5281/zenodo.7278042
 repository-code: 'https://github.com/DaniloCVieira/iMESc'
 version: 2.1.0.1
 date-released: '2022-04-25'
