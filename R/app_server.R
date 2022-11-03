@@ -2887,7 +2887,7 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
       vals$cur_unsup_menu<-"menu_som"
     }
     if(input$sidebarItemExpanded=="unsup_expand"){
-      if(vals$cur_sup_menu %in% c("menu_som",'menu_hc','menu_kmeans'))
+      if(vals$cur_unsup_menu %in% c("menu_som",'menu_hc','menu_kmeans'))
         shinyjs::addClass(class="testet", selector='#sidebar-main > div > li:nth-child(6) > a')
       shinyjs::removeClass(class="testet", selector='#sidebar-main > div > li:nth-child(7) > a')
       updateTextInput(session, "tabs", value = vals$cur_unsup_menu)

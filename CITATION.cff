@@ -20,9 +20,7 @@ authors:
     family-names: Fonseca
     email: gfonseca.unifesp@gmail.com
     affiliation: Universidade Federal de São Paulo
-identifiers:
-  - type: doi
-    value: 10.5281/zenodo.7278042
-repository-code: 'https://github.com/DaniloCVieira/iMESc'
 version: 2.1.0.1
-date-released: '2022-04-25'
+date-released: '2022-11-03'
+url: 'https://github.com/DaniloCVieira/iMESc'
+doi: 10.5281/zenodo.7278042
