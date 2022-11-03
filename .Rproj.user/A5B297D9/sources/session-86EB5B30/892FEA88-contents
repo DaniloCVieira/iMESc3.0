@@ -1,0 +1,7 @@
+div(
+  tipify(icon("fas fa-question-circle"),"Integer or a comma-delimited vector specifying the maximum depth of each tree (i.e., the highest level of variable interactions allowed). A value of 1 implies an additive model, a value of 2 implies a model with up to 2-way interactions, etc. Default is 1.", options = list(container="body")),
+"+ interaction.depth:",
+inline(
+  textinput(ns("interaction.depth"), NULL, value='1, 2', width="110px")
+)
+)

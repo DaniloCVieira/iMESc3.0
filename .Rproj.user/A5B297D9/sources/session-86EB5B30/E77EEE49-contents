@@ -1,0 +1,98 @@
+
+interaction.depth=unlist(strsplit(input$interaction.depth,","))
+n.trees=unlist(strsplit(input$n.trees,","))
+shrinkage=unlist(strsplit(input$shrinkage,","))
+n.minobsinnode=unlist(strsplit(input$n.minobsinnode,","))
+
+grid<-expand.grid(interaction.depth=interaction.depth, 
+                  n.trees = n.trees,
+                  shrinkage=shrinkage,
+                  n.minobsinnode=n.minobsinnode)
+if(is.null(vals$n.trees)){vals$n.trees<-c("250, 500")}
+if(is.null(vals$interaction.depth)){vals$interaction.depth<-c("1, 2")}
+
+if(is.null(vals$shrinkage)){vals$shrinkage<-c("0.1")}
+
+if(is.null(vals$n.minobsinnode)){vals$n.minobsinnode<-c("10")}
+
+
+output$sgboost_params<- renderUI({
+  if(is.null(vals$n.trees)){vals$n.trees<-c("250, 500")}
+  if(is.null(vals$interaction.depth)){vals$interaction.depth<-c("1, 2")}
+  
+  if(is.null(vals$shrinkage)){vals$shrinkage<-c("0.1")}
+  
+  if(is.null(vals$n.minobsinnode)){vals$n.minobsinnode<-c("10")}
+  
+  column(12,class="well2",
+         div(class="map_control_style",style="color: #05668D; margin-top: 20px",
+             div(
+               div(
+                 tipify(icon("fas fa-question-circle"),"Integer or a comma-delimited vector- the total number of trees to fit. This is equivalent to the number of iterations and the number of basis functions in the additive expansion", options = list(container="body")),
+                 "+ n.trees:",
+                 inline(
+                   textInput(ns("n.trees"), NULL, value=vals$n.trees, width="110px")
+                 )
+               ),
+               div(
+                 tipify(icon("fas fa-question-circle"),"Integer or a comma-delimited vector-  the maximum depth of each tree (i.e., the highest level of variable interactions allowed). A value of 1 implies an additive model, a value of 2 implies a model with up to 2-way interactions, etc. Default is 1.", options = list(container="body")),
+                 "+ interaction.depth:",
+                 inline(
+                   textInput(ns("interaction.depth"), NULL, value=vals$interaction.depth, width="110px")
+                 )
+               ),
+               div(
+                 tipify(icon("fas fa-question-circle"),"Integer or a comma-delimited vector:  the minimum number of observations in the terminal nodes
+of the trees", options = list(container="body")),
+"+ n.minobsinnode:",
+inline(
+  textInput(ns("n.minobsinnode"), NULL, value=vals$n.minobsinnode, width="110px")
+)
+               ),
+div(
+  tipify(icon("fas fa-question-circle"),"Integer or a comma-delimited vector: shrinkage parameter applied to each tree in the expansion. Also known as
+the learning rate or step-size reduction", options = list(container="body")),
+"+ shrinkage:",
+inline(
+  textInput(ns("shrinkage"), NULL, value=vals$shrinkage, width="110px")
+)
+),
+
+             ),
+
+
+div(
+  tipify(icon("fas fa-question-circle"),textseed(), options = list(container="body")),
+  "+ seed:",
+  inline(
+    numericInput(ns("seedsgboost"), NULL, value = NULL, width="122px")
+  )
+),
+
+div(popify(icon("fas fa-question-circle"),NULL,
+           HTML(paste0(
+             div(HTML(paste0(strong("repeatedcv:")," repeated k-fold cross-validation;"))),
+             div(HTML(paste0(strong("boot:")," bootstraping;"))),
+             
+             div(HTML(paste0(strong("LOOCV:")," Leave one out;"))),
+             div(HTML(paste0(strong("LGOCV:")," Leave-group out")))
+             
+           )), options=list(container="body")
+           
+),
+"+ Resampling method:",
+pickerInput(ns("sgboost_res_method"),NULL, choices=list("repeatedcv","boot","LOOCV","LGOCV"), width = "100px")
+),
+uiOutput(ns("sgboost_resampling"))
+         ),
+
+column(12,style='white-space: normal;',
+       uiOutput(ns("sgboost_war"))
+),
+
+column(12, align = "center",
+       popify(actionButton(ns("trainsgboost"), h4(img(src=sgboost_icon,height='20',width='20'),"train Stochastic Gradient Boosting",icon("fas fa-arrow-circle-right")), style = "background:  #05668D; color: white"),NULL,"Click to run")
+),
+
+  )
+})
