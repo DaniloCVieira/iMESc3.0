@@ -7,8 +7,8 @@ Authors@R:
 Description: iMESc is an Interactive Machine Learning App for
     Environmental Science.
 License: MIT + file LICENSE
-URL: https://github.com/DaniloCVieira/iMESc2.1
-BugReports: https://github.com/DaniloCVieira/iMESc2.1/issues
+URL: https://github.com/DaniloCVieira/iMESc2
+BugReports: https://github.com/DaniloCVieira/iMESc/issues
 Depends:
     R (>= 3.5.0),
     aweSOM,
@@ -78,6 +78,7 @@ Depends:
     writexl
 Suggests: 
     knitr,
+    rlang (>= 1.0.5),
     rmarkdown
 VignetteBuilder: 
     knitr

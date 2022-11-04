@@ -2723,7 +2723,7 @@ plot_varimport<-function(m,palette='viridis',newcolhabs,position="dodge",type="g
 
   X <- varImp(m)
 
-  colnames(X$importance)<- m$levels
+  #colnames(X$importance)<- m$levels
    if(type=="default"){
      gg<-plot(X,nvars)
    } else{

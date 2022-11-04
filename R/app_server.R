@@ -10952,9 +10952,13 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
 
 
   output$preprocess<-renderUI({
-    req(length(vals$saved_data)>0)
     renderUI({
-      div(id="preprocess",em("Pre-processing tools"), style="padding: 0px;margin:0px")
+      div(
+       # div(id="preprocess0", style="padding: 0px;margin:0px"),
+        div(id="preprocess",em("Pre-processing tools"), style="padding: 0px;margin:0px")
+       # div(id="preprocess1", style="padding: 0px;margin:0px"),
+
+      )
     })
   })
 
@@ -12092,35 +12096,39 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
 
 
   observeEvent(input$go_na,{
-    req(input$na_targ=="Numeric-Attribute")
-    data<-data_cogs$df
-    transf<-attr(data,"transf")
-    withProgress(message="Performing Imputation...",
-                 min = 1,
-                 max = 1,{
-                   data<-nadata(data=data,
-                                na_method=input$na_method,
-                                data_old=vals$saved_data[[vals$cur_data]],
-                                data_name=vals$cur_data,
-                                k=input$na_knn)
-                   beep(10)
+    try({
 
-                 })
+      req(input$na_targ=="Numeric-Attribute")
+      data<-data_cogs$df
+      transf<-attr(data,"transf")
+      withProgress(message="Performing Imputation...",
+                   min = 1,
+                   max = 1,{
+                     data<-nadata(data=data,
+                                  na_method=input$na_method,
+                                  data_old=vals$saved_data[[vals$cur_data]],
+                                  data_name=vals$cur_data,
+                                  k=input$na_knn)
+                     beep(10)
 
-    transf<-attr(data,"transf")
+                   })
 
-    transf["Data_imp",'current']<-input$na_method
-    attr(data,"transf")<-transf
+      transf<-attr(data,"transf")
+
+      transf["Data_imp",'current']<-input$na_method
+      attr(data,"transf")<-transf
 
 
-    data_cogs$df<-data
-    vals$hand_save<-"Save changes"
-    vals$hand_save2<-NULL
-    vals$hand_save3<-NULL
+      data_cogs$df<-data
+      vals$hand_save<-"Save changes"
+      vals$hand_save2<-NULL
+      vals$hand_save3<-NULL
 
-    showModal(
-      hand_save_modal()
-    )
+      showModal(
+        hand_save_modal()
+      )
+
+    })
   })
   observeEvent(input$check_fac,{
     if(isTRUE(input$check_fac)){

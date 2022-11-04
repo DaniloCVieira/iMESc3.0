@@ -1609,6 +1609,31 @@ font-size: 13px;
 z-index: 99;
 }
 
+#preprocess0{
+position: fixed;
+ z-index: 99;
+margin-top: 0px;
+padding: 0px;
+top: 10px;
+width: 33px;
+height: 5px;
+right: 320px;
+border-top: 1px solid white;
+border-left: 1px solid white;
+}
+
+#preprocess1{
+position: fixed;
+ z-index: 99;
+margin-top: 0px;
+padding: 0px;
+top: 10px;
+width: 110px;
+height: 5px;
+right:90px;
+border-top: 1px solid white;
+border-right: 1px solid white;
+}
 
 #upload_tools .btn-radio_cogs{
   color: #05668D;

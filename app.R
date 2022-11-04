@@ -19,7 +19,7 @@ imesc::run_app(options=list(quiet=T,shiny.autoload.r=FALSE))
 #devtools::install_github('DaniloCVieira/iMESc2.1', upgrade='never', build =F, force=T)
 #library(shiny)
 #library(pkgload)
-#shiny::runGitHub('iMESc2.1','DaniloCVieira')
+#shiny::runGitHub('iMESc','DaniloCVieira')
 
 #
 
