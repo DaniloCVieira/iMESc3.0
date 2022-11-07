@@ -1516,7 +1516,10 @@ margin-top: 2px;
 
 }
 
-
+.map_control_style{
+  position: relative;
+  --parentHeight:50%;
+}
 
 .palette{
 

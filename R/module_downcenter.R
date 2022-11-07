@@ -25,6 +25,7 @@ module_server_downcenter <- function (input, output, session,vals ){
            "rda"={data.frame(vals$rda_summary)},
            "segRDA"={data.frame(vals$segrda_summary)},
            "DP smw"={data.frame(vals$dp_smw)},
+           "PCA result"=vals$pca_out,
 
            'nb_stats_class'=data.frame(vals$nbtable_class),
            'rf_stats_class'=data.frame(vals$rftable_class),

@@ -680,31 +680,37 @@ train.summary_fun<- function(m){
     summ <- m$grid[-1]
     summ$neighbourhood.fct <- as.character(summ$neighbourhood.fct)
     summ <- do.call(rbind, summ)
+
     mode <-attr(m,"mode")
-    alpha = paste0(m$alpha, collapse = "; ")
-    radius = paste0(round(m$radius, 3), collapse = "; ")
+    alpha0 = m$alpha[1]
+    alpha1 =m$alpha[2]
+    radius0 =m$radius[1]
+    radius1 =m$radius[2]
     user.weights = m$user.weights
     maxNA.fraction = m$maxNA.fraction
-    dist.fcts = m$dist.fcts
+    dist.fcts = m$dist.fcts[[1]]
 
+    summ[,1]<-tolower(summ[,1])
 
-    Parameters <-
-      rbind(
+    Parameters <- rbind(
         errors_som(m),
         n.obs,
         n.variables,
         summ,
-        alpha,
-        radius,
-        user.weights,
+        alpha0,
+        alpha1,
+        radius0,
+        radius1,
+
         maxNA.fraction,
         dist.fcts,
         mode
+
       )
-
-
 
     data.frame(Parameters)
 
   }
 }
+
+

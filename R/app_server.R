@@ -929,7 +929,8 @@ app_server <- function(input, output, session) {
       uiOutput("side_map0_stack"),
       column(8,
              column(12,uiOutput("map_options")),
-             column(12,  withSpinner(type=8,color="SeaGreen",uiOutput("map_out")))),
+             column(12,  withSpinner(type=8,color="SeaGreen",uiOutput("map_out"))),
+             column(12,  withSpinner(type=8,color="SeaGreen",uiOutput("map05"))))
 
 
 
@@ -2635,7 +2636,8 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
       uiOutput("ss3d"),
       uiOutput("map_ssrgl"),
       uiOutput("map_srrgl"),
-      uiOutput("map_out2"))
+      uiOutput("map_out2")
+     )
 
     res
   })
@@ -2805,23 +2807,34 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
       uiOutput("map02"),
       uiOutput("map03")
 
+
     )})
 
   output$map05<-renderUI({
     req(isTRUE(input$mantel_map))
     req(length(input$var_map)>0)
-    zvalues<-getdata_map()[,input$var_map]
-    coords<-attr(getdata_map(),"coords")
+    #vals<-readRDS("savepoint.rds")
+    #data<-vals$saved_data[[1]]
+    #input$choices_map<-'Factor-Attribute'
+    #input$var_map<-"depth.area"
 
+    data<-getdata_map()
+    coords<-attr(data,"coords")
+    data=  switch(input$choices_map,
+                  'Factor-Attribute'=rev(attr(data,"factors")),
+                  'Numeric-Attribute'=colnames(data))
     colnames(coords) <- c ("x", "y")
+    zvalues<-data[,input$var_map]
     geo.dist<-geodist(x=coords, paired=T, measure="geodesic")
-
     dist.mat<-dist(zvalues)
+    if(input$choices_map=="Factor-Attribute"){dist.mat<-dist(
+      kohonen::classvec2classmat(as.matrix(zvalues)))}
+
     correlog<-mantel.correlog(dist.mat, geo.dist, n.class=input$mantel_nclass, break.pts=NULL,cutoff=input$mantel_cutoff, r.type=input$mantel_r.type, nperm=input$mantel_nperm, mult="holm", progressive=TRUE )
 
 
     # Comparing
-    fluidRow(
+    div(
       switch(input$spatial_stats,
              "plot"=renderPlot({
                plot(correlog,input$mantel_alpha, xlab="Distance class (m)")
@@ -3027,8 +3040,8 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
     data=vals$saved_data[[input$data_map]]
     #req(nrow(data)>0)
     #req(input$var_map_filter1)
-    factors<-attr(data, "factors")
-    coords<-attr(data,"coords")
+    #factors<-attr(data, "factors")
+    #coords<-attr(data,"coords")
     data
   })
   filtermap<-reactive({
@@ -3769,7 +3782,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
 
   })
   output$viewsom<-renderUI({
-    fluidRow(
+    div(
       splitLayout(
         cellWidths = c("30%","50%"),
         h5(
@@ -6629,7 +6642,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
 
   bag_agg<-reactive({
     bag<-1
-    name0<-'Datalist_agg'
+    name0<-paste0(input$data_upload,"_",input$spread_measures)
     name1<-paste0(name0," (",bag,")")
     if(name1%in%names(vals$saved_data))
     {
@@ -6645,15 +6658,19 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
   bag_extralayer<-reactive({
     bag<-1
     name0<-'Extra-Layer'
+    names_shapes<-names(attr(vals$saved_data[[input$shp_datalist]],"extra_shape"))
     name1<-paste0(name0," (",bag,")")
-    if(name1%in%names(attr(vals$saved_data[[input$data_bank]],"extra_shape")))
-    {
-      repeat{
-        bag<-bag+1
-        name1<-paste0(name0," (",bag,")")
-        if(!name1%in%names(attr(vals$saved_data[[input$data_bank]],"extra_shape"))) break
+    if(length(names_shapes)>0){
+      if(name1%in%names_shapes)
+      {
+        repeat{
+          bag<-bag+1
+          name1<-paste0(name0," (",bag,")")
+          if(!name1%in%names_shapes) break
+        }
       }
     }
+
     paste0(name0," (",bag,")")
 
   })
@@ -7321,23 +7338,21 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
       },
 
       content = function(file) {
-        withProgress(message = "Preparing the download ...",
-                     min = 1,
-                     max = 1,
-                     {
-                       tosave<-isolate(reactiveValuesToList(vals))
-                       tosave<-c(tosave["saved_data"],
-                                 tosave["saved_maps"],
-                                 tosave["newcolhabs"],
-                                 tosave['colors_img'],
-                                 tosave[grep("cur",names(tosave))])
+        withProgress(
+          message = "Preparing the download ...",
+          min = 1,
+          max = 1,
+          {
+            tosave<-isolate(reactiveValuesToList(vals))
+            #tosave<-c(tosave["saved_data"],tosave["saved_maps"],tosave["newcolhabs"],tosave['colors_img'],tosave[grep("cur",names(tosave))])
+            tosave$map_res<-NULL
 
+            saveRDS(tosave, file)
+            beep(10)
 
-                       saveRDS(tosave, file)
-                       beep(10)
-
-                       runjs("Shiny.setInputValue('last_btn', 'fade');")
-                     })
+            runjs("Shiny.setInputValue('last_btn', 'fade');")
+          }
+        )
 
       }
     )
@@ -7828,7 +7843,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
 
   })
   output$shp_control<-renderUI({
-    req(length(input$shp$datapath)!=0|input$shp_tab=="tab_crop")
+    #req(length(input$shp$datapath)!=0|input$shp_tab=="tab_crop")
     if(input$shp_tab=="tab_crop"){
       choices<-layers_choices2()
       validate(need(length(choices)>1,"Requires a Datalist with at least two shapes"))
@@ -7837,10 +7852,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
         div(
           inline(pickerInput("shp_include","4. Include shape as:", c("Base-Shape","Layer-Shape","Extra-Shape"),width="150px")),
           inline(uiOutput("shp_datalist")),
-          inline(
-            conditionalPanel("input.shp_include=='Extra-Shape'",
-                             textInput("extra_layer_newname", "5. Name of of layer",bag_extralayer(), width="200px"))
-          ),
+          inline(uiOutput("extra_layer_newname")),
           tipify(bsButton("add_shape",span(icon(verify_fa = FALSE,name=NULL,class="fas fa-map"),icon(verify_fa = FALSE,name=NULL,class="fas fa-arrow-circle-right")), style='button_active'),"Click to add the Shape into the selected Datalist"),
 
           inline(
@@ -7848,6 +7860,11 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
           )
         )
     )
+  })
+  output$extra_layer_newname<-renderUI({
+    req(input$shp_include=='Extra-Shape')
+
+    textInput("extra_layer_newname", "5. Name of of layer",bag_extralayer(), width="200px")
   })
   observeEvent(input$add_shape,{
     shape<- if(input$shp_tab=="tab_create"){
@@ -8118,6 +8135,15 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
 
 
     }
+    #data<- data.frame(fread('som.csv', stringsAsFactors = T,na.strings=c("","NA")))
+
+
+    pic_log<-which(unlist(lapply(data,is.logical)))
+    if(length(pic_log)>0){
+      data[,  pic_log ]<- do.call(data.frame,lapply(data[, pic_log, drop=F], function(x) as.factor(x)))
+    }
+
+
     remove_IDs<-which(rowSums(is.na(data))==ncol(data))
     if(length(remove_IDs)>0){
       data<-data[-remove_IDs,]}
@@ -10713,7 +10739,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
 
 
     # renderPrint()
-
+#data<-read.csv("som.csv",sep=";", stringsAsFactors = T)
     if (any(names(datastr(data)$type.vars) == "factor")){
 
       for(i in 1:ncol(data)){
@@ -10723,10 +10749,13 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
       num_cols<-which(unlist(lapply(data,function(x)is.numeric(x))))#ok
       data.numerics<-data[,num_cols,drop=F]
       data.factors<-data[,which(unlist(lapply(data,function(x)is.factor(x)))),drop=F]
+
+      data.factors<-cbind(data.factors)
       rownames(data.numerics)<-rownames(data)
       data<-data.numerics
       attr(data,"data.factors")<-data.factors
-      factors_in[,colnames(data.factors)]<-data.factors}
+      factors_in[,colnames(data.factors)]<-data.factors
+      }
 
 
     attr(data,"nobs_ori")<-nrow(data)
@@ -13006,8 +13035,6 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
 
   output$menu_upload_out<-renderUI({
     #validate(need(length(vals$saved_data)>0,"No Datalist found"))
-    vals$module<-"Descriptive tools"
-
     res<-module_ui_desctools("module_desctools")
     mod_desctools <- callModule(module_server_desctools, "module_desctools",  vals=vals, df_colors=vals$colors_img,newcolhabs=newcolhabs,df_symbol=df_symbol)
     removeModal()

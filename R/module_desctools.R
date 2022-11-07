@@ -19,10 +19,11 @@ module_ui_desctools<-function(id){
 # Server
 #' @export
 module_server_desctools<-function (input,output,session,vals,df_colors,newcolhabs,df_symbol ){
+  ns<-session$ns
    pw_icon <- base64enc::dataURI(file = "inst/app/www/pwrda_icon.png", mime = "image/png")
    smw_icon <- base64enc::dataURI(file = "inst/app/www/smw_icon.png", mime = "image/png")
 
-  ns<-session$ns
+
   box_y_cur<-reactiveValues(df=1)
 
   filter_box2_cur<-reactiveValues(df=1)
@@ -41,10 +42,10 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
   })
 
   observeEvent(input$desc_options,{
-    if(input$desc_options%in%c('tab_segrda','tab_rda',"tab_omi")){
+    if(input$desc_options%in%c('tab_scatter','tab_segrda','tab_rda',"tab_omi")){
       shinyjs::hide('data_upload0')
     }
-    if(!input$desc_options%in%c('tab_segrda','tab_rda',"tab_omi")){
+    if(!input$desc_options%in%c('tab_scatter','tab_segrda','tab_rda',"tab_omi")){
       shinyjs::show('data_upload0')
     }
   })
@@ -73,7 +74,7 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
                                 uiOutput(ns('summaries_out'))),
                        tabPanel('Ridges',
                                 uiOutput(ns('rid_panel'))),
-                       tabPanel('Scatter',
+                       tabPanel('Scatter',value="tab_scatter",
                                 uiOutput(ns('scatter_out'))),
                        tabPanel('Histogram',
                                 uiOutput(ns("stats_phist"))),
@@ -109,13 +110,22 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
                                         class="map_control_style",
                                         style="color: #05668D",
                                         uiOutput(ns('opca_biplot')),
-                                        uiOutput(ns('pca_options'))
+                                        uiOutput(ns('pca_options_plot')),
+                                        uiOutput(ns('pca_summary'))
 
                                       )
                                     ),
+
                                     mainPanel(
                                       uiOutput(ns("stats_cpca")),
-                                      uiOutput(ns("stats_ppca"))
+                                      tabsetPanel(id=ns('pca_options'),selected=vals$pca_options,
+                                        tabPanel("Plot",
+                                                 value="pca_plot",
+                                                 uiOutput(ns("stats_ppca"))),
+                                        tabPanel("Summary",
+                                                 value="pca_summary",
+                                                 inline(DT::dataTableOutput(ns("summary_pca"))))
+                                      )
                                     )
                                   )
                                 )
@@ -140,7 +150,20 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
                                 )
                        ),
                        tabPanel('segRDA',value="tab_segrda",
-                                uiOutput(ns("segrda_header")),
+                                div(
+                                  style="background: white",
+                                  p(strong("Segmented Redundancy Analysis")),
+                                  span(
+                                    inline(
+                                      span(style="width: 150px",
+
+                                           inline( pickerInput(ns("segrda_X"),span("Y Data", tiphelp("Predictors")), choices=names(vals$saved_data), selected=vals$cur_segrda_X))
+                                      )
+                                    ),
+                                    inline( pickerInput(ns("segrda_Y"),span("~ X Data", tiphelp("Response data")), choices=names(vals$saved_data), selected=vals$cur_segrda_Y))
+                                  )
+
+                                ),
                                 uiOutput(ns('segrda_panels'))
                        )
            )
@@ -148,14 +171,73 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
 
   })
 
+
+
+pic_pca_results<-reactive({
+  req(input$show_pca_results)
+  switch (input$show_pca_results,
+          'Standard deviations' = 'sdev',
+          'Rotation'='rotation',
+          'Centering'='center',
+          'Scaling'='scale',
+          'Scores'='x',
+          'Importance'='importance',
+  )
+})
+
+  output$pca_summary<-renderUI({
+    req(input$pca_options=="pca_summary")
+    div(
+      tags$div(
+        pickerInput(ns("show_pca_results"),"Show result:", c('Importance','Scores',"Standard deviations","Rotation","Centering","Scaling")),style="width: var(--parentHeight);"
+      ),
+      actionLink(
+        ns('down_pca_results'),span("+ Download",icon("fas fa-table")))
+    )
+
+
+  })
+
+  observeEvent(input$down_pca_results,{
+    vals$hand_down<-"PCA result"
+    module_ui_downcenter("downcenter")
+    mod_downcenter <- callModule(module_server_downcenter, "downcenter",  vals=vals)
+
+  })
+
+  observeEvent(input$pca_options,{
+    vals$pca_options<-input$pca_options
+  })
+  observeEvent(input$scatter_y_datalist,{
+    vals$scatter_y_datalist<-input$scatter_y_datalist
+  })
+  output$scatter_y_datalist<-renderUI({
+    pickerInput(ns("scatter_y_datalist"),'Datalist Y', choices=names(vals$saved_data), selected=vals$scatter_y_datalist)
+  })
+  observeEvent(input$scatter_x_datalist,{
+    vals$scatter_x_datalist<-input$scatter_x_datalist
+  })
+  output$scatter_x_datalist<-renderUI({
+    pickerInput(ns("scatter_x_datalist"),'Datalist X', choices=names(vals$saved_data), selected=vals$scatter_x_datalist)
+  })
   output$scatter_out<-renderUI({
     div(style="background: white",
         p(strong("Scatter plot")),
-        inline(uiOutput(ns("scatter_y_input"))),
-        inline(uiOutput(ns("scatter_x"))),
+
         sidebarLayout(
           sidebarPanel(
-            uiOutput(ns('scatter_side'))
+            div( class="map_control_style",
+                 style="color: #05668D",
+
+              div(inline(uiOutput(ns("scatter_x_datalist"))),
+                  inline(uiOutput(ns("scatter_x")))),
+
+              div(
+                inline(uiOutput(ns("scatter_y_datalist"))),
+                inline(uiOutput(ns("scatter_y_input")))
+              ),
+              uiOutput(ns('scatter_side'))
+            )
           ),
           mainPanel(uiOutput(ns("scatter_plot"))))
     )
@@ -166,8 +248,7 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
     req(input$scatter_y)
     div(
 
-      class="map_control_style",
-      style="color: #05668D",
+
       div(span("+ Shape:",
                inline(pickerInput(inputId=ns("scatter_symbol"),
                                   label = NULL,
@@ -204,19 +285,20 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
 
   })
   output$scatter_plot<-renderUI({
-    data<-getdata_upload0()
+    datax<-vals$saved_data[[input$scatter_x_datalist]]
+    datay<-vals$saved_data[[input$scatter_y_datalist]]
     renderPlot({
-      plot(data[,input$scatter_x],data[,input$scatter_y], pch=as.numeric(input$scatter_symbol), cex=input$scatter_cexpoint, xlab=input$scatter_xlab, ylab=input$scatter_ylab)
+      plot(datax[,input$scatter_x],datay[,input$scatter_y], pch=as.numeric(input$scatter_symbol), cex=input$scatter_cexpoint, xlab=input$scatter_xlab, ylab=input$scatter_ylab)
       vals$scatter_plot<-recordPlot()
     })
   })
 
   output$scatter_y_input<-renderUI({
-    req(input$scatter_x)
-    data<-getdata_upload0()
+    req(input$scatter_y_datalist)
+    data<-vals$saved_data[[input$scatter_y_datalist]]
     div(
-      div(strong('Y')),
-      pickerInput( ns("scatter_y"),NULL,choices =colnames(data),selected= vals$scatter_y, width="200px"
+
+      pickerInput( ns("scatter_y"),'Y',choices =colnames(data),selected= vals$scatter_y, width="200px"
       ))
 
 
@@ -224,10 +306,11 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
 
   output$scatter_x<-renderUI({
 
-    data<-getdata_upload0()
+    req(input$scatter_x_datalist)
+    data<-vals$saved_data[[input$scatter_x_datalist]]
     div(
-      div(strong('X')),
-      pickerInput( ns("scatter_x"),NULL,choices = colnames(data),selected= vals$scatter_y, width="200px"
+
+      pickerInput( ns("scatter_x"),"X",choices = colnames(data),selected= vals$scatter_x, width="200px"
       ))
 
 
@@ -518,6 +601,7 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
   })
 
   output$opca_biplot<-renderUI({
+    req(input$pca_options=="pca_plot")
     div(
       span("+",
            inline(
@@ -644,7 +728,8 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
       span("+ Factor:",
            inline(tipify(pickerInput(ns("mds_symbol_factor"),NULL,choices = rev(colnames(attr(getdata_upload0(),"factors"))), width='125px'), "symbol classification factor"))))
   })
-  output$pca_options<-renderUI({
+  output$pca_options_plot<-renderUI({
+    req(input$pca_options=="pca_plot")
     div(
       div(
         span("+",
@@ -746,7 +831,11 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
       }))
     )
   })
+  observeEvent(input$cextext,{
+    vals$cextext<-input$cextext
+  })
   output$stats_var<-renderUI({
+    if(is.null(vals$cextext)){vals$cextext<-1}
     data=getdata_upload0()
     factors<-data[,unlist(lapply(data,is.factor))]
     numerics<-data[,unlist(lapply(data,is.numeric))]
@@ -758,10 +847,11 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
 
     fluidRow(
       column(12,
-             splitLayout(cellWidths = c("10%","90%"),
+             splitLayout(cellWidths = c("10%","45%","45%"),
                          column(12,actionButton(ns('downp_summ_num'),tipify(icon("fas fa-download"), "Download Plot"), style="button_active")),
                          column(12,selectInput(ns("splitdata"),"Variables:", choices=options_show)
-                         ))
+                         ),
+                         column(12,numericInput(ns("cextext"),"Text size:", value= vals$cextext, step=1, width="100px")))
       ),
       column(12,plotOutput(ns("summ_num"), height = '700px'))
     )
@@ -825,38 +915,96 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
 
 
     data<-data[,options_num_sel[1]:options_num_sel[2], drop=F]
-    str_numerics(data)
+    str_numerics(data, cextext=input$cextext)
     vals$varplot<-recordPlot()
   })
 
+
+  output$pca_fiz<-renderUI({
+    renderPlot({
+      pca_symbol_factor<-pca_symbol_factor()
+      pca<-prcomp(getdata_upload0())
+
+
+      {
+        col_pts=getcolhabs(vals$newcolhabs,input$pca_colpalette,nlevels(pca_symbol_factor))
+        gg<-fviz_pca_biplot(pca,geom="points", label="var",habillage=pca_symbol_factor,col.var ='red')
+        data2<-data.frame(id=rownames(pca$x),factor=pca_symbol_factor,pca$x[,1:2])
+        if(isTRUE(input$pca_show_symbols )){
+          gg<-gg+geom_point(data=data2,aes(x = PC1, y = PC2, col=factor), pch=as.numeric(input$pca_symbol), size=input$pca_cexpoint)}
+        if(isTRUE(input$pca_show_labels )){
+          gg<-gg+geom_text(data=data2,aes(x = PC1, y = PC2, label = factor, col=factor))
+        }
+        gg
+
+      }
+      colorFAC<-  data.frame(prev_fac=levels(pca_symbol_factor),col_pts, levels=1:nlevels(pca_symbol_factor))
+      gg<-gg+scale_color_manual(name=input$pca_labfactor,labels =  colorFAC$prev_fac,values =  colorFAC$col_pts,drop=F )
+      if(isFALSE(input$biplot)){
+        gg$layers<-c(gg$layers[-3])
+      } else{
+        gg$layers<-c(gg$layers[-3],gg$layers[3])
+      }
+
+      gg
+
+    })
+  })
+
+
+
+  output$summary_pca<-DT::renderDataTable({
+
+
+    req(!is.null(vals$pca))
+    res<- summary(vals$pca)
+    center<-res$center
+    scale<-res$scale
+    sdev<-res$sdev
+    res$center<-data.frame(center)
+    res$scale<-data.frame(scale)
+    res$sdev<-data.frame(sdev)
+    res<-lapply(res, data.frame)
+    vals$pca_out<-res[[pic_pca_results()]]
+    vals$pca_out
+  },options = list(pageLength = 20, info = FALSE,lengthMenu = list(c(20, -1), c( "20","All")), autoWidth=T,dom = 'lt'), rownames = T,class ='cell-border compact stripe')
+
+
+  observeEvent(input$data_upload0,{
+    X   = as.matrix(getdata_upload0())
+    vals$pca<-prcomp(X)
+  })
   output$mdscustom<-renderPlot({plot_mds()})
   output$stats_ppca<-renderUI({
     validate(need(!anyNA(getdata_upload0()), "This functionality does not support missing values; Please use the transformation tool to the handle missing values."))
+    column(      12,
+      #uiOutput(ns('pca_fiz')),
+      renderPlot({
+        req(!is.null(vals$pca))
+        suppressWarnings({
+          ppca(
+            vals$pca,
+            key = pca_symbol_factor(),
+            points = input$pca_show_symbols,
+            text = input$pca_show_labels,
+            palette = input$pca_colpalette,
+            cex.points = input$pca_cexpoint,
+            cex.text = input$pca_cextext,
+            pch=pca_symbol(),
+            keytext=pca_text_factor(),
+            biplot=input$biplot,
+            newcolhabs=vals$newcolhabs,
+            textcolor=input$pca_labcolor,
+            pos=input$pca_labadj,
+            offset=input$pca_offset
+          )
+        })
+        vals$ppca_plot<-recordPlot()
 
 
-    column(12,renderPlot({
-
-      suppressWarnings({
-        ppca(
-          getdata_upload0(),
-          key = pca_symbol_factor(),
-          points = input$pca_show_symbols,
-          text = input$pca_show_labels,
-          palette = input$pca_colpalette,
-          cex.points = input$pca_cexpoint,
-          cex.text = input$pca_cextext,
-          pch=pca_symbol(),
-          keytext=pca_text_factor(),
-          biplot=input$biplot,
-          newcolhabs=vals$newcolhabs,
-          textcolor=input$pca_labcolor,
-          pos=input$pca_labadj,
-          offset=input$pca_offset
-        )
       })
-      vals$ppca_plot<-recordPlot()
 
-    }))
+    )
 
   })
   output$stats_pmds<-renderUI({
@@ -1316,24 +1464,14 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
   ###  SEGRDA    ###
   ### ###############
   output$segrda_header<-renderUI({
-    div(style="background: white",
-        p(strong("Segmented Redundancy Analysis")),
-        span(
-          inline(
-            span(style="width: 150px",
-
-                 inline(uiOutput(ns("segrda_X")))
-            )
-          ),
-          inline(uiOutput(ns("segrda_Y")))
-        )
-    )
+    div()
   })
   output$segrda_panels<-renderUI({
     req(input$segrda_X)
     req(input$segrda_Y)
 
     column(12,
+
            tabsetPanel(id=ns("segrda_panels"),
                        selected=vals$segrda_panels,
 
@@ -1350,13 +1488,14 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
                                 p(strong("Piecewise RDA")),
                                 uiOutput(ns("pw_out")))))
   })
-  output$segrda_X<-renderUI({
-    pickerInput(ns("segrda_X"),span("Y Data", tiphelp("Predictors")), choices=names(vals$saved_data), selected=vals$segrda_X)
-  })
-  output$segrda_Y<-renderUI({
-    req(input$segrda_X)
-    pickerInput(ns("segrda_Y"),span("~ X Data", tiphelp("Response data")), choices=names(vals$saved_data), selected=vals$segrda_Y)
-  })
+
+
+  observeEvent(input$segrda_Y,{
+    vals$cur_segrda_Y<-input$segrda_Y})
+
+
+  observeEvent(input$segrda_X,{
+    vals$cur_segrda_X<-input$segrda_X})
 
   output$databank_storage<-renderUI({
 
@@ -1419,12 +1558,12 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
         image(x, main = "Original response data", col = topo.colors(100), axes = F,
 
               xlab = "Observations", ylab = "Variable values")
-        abline(v=scales::rescale(mybreaks,c(0,1)), col="red")
+       # abline(v=scales::rescale(mybreaks,c(0,1)), col="red")
 
 
         image(yo, main = "Ordered response data", col = topo.colors(100), axes = F,
               xlab = "Observations", ylab = "Variable values")
-        abline(v=scales::rescale(mybreaks,c(0,1)), col="red")
+        #abline(v=scales::rescale(mybreaks,c(0,1)), col="red")
 
 
       })
@@ -1558,13 +1697,19 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
       )
     )
   })
+
+  observeEvent(vals$max_seq,{
+
+    req(!is.null(vals$max_seq))
+    vals$dp_seq.sig<-attr(max_seq(),"min")
+  })
+
   output$plot_dp<-renderPlot({
     req(input$dp_view=='Plot')
+    req(input$dp_seq.sig)
+    req(input$dp_cex)
+    req(input$dp_BPs)
     max_seq<-max_seq()
-    if(bag_smw$df==T){
-      updateNumericInput(session,"dp_seq.sig", value=attr(max_seq,"min"))
-      bag_smw$df<-F}
-
     validate(need(input$dp_seq.sig<=max_seq,paste(
       "DP shows '", sum(DP_smw()[,5]!="ns"),"' significant dissimilarity values but no breakpoint could be determined for seq.sig='",input$dp_seq.sig,"The maximum value for this input must be","max_seq"
     )))
@@ -1604,7 +1749,13 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
       "Download DP results"
     )
   })
+  observeEvent(input$dp_seq.sig,{
+    vals$dp_seq.sig<-input$dp_seq.sig
+  })
   output$side_dp<-renderUI({
+    if(is.null(vals$dp_seq.sig)){
+      vals$dp_seq.sig<-3
+    }
 
     validate(need(length(vals$smw_dp)>0,"You need to run SMW analysis first"))
     fluidRow(
@@ -1647,7 +1798,7 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
       div(
         span(span(tipify(icon("fas fa-question-circle", style="color: gray"),"The maximum length of consecutive, significant values of dissimilarity that will be considered in defining the community breakpoints"),"+ seq.sig:"),
              inline(
-               numericInput(ns("dp_seq.sig"),NULL, value=3,step=1, width="75px", min=1)
+               numericInput(ns("dp_seq.sig"),NULL, value=vals$dp_seq.sig,step=1, width="75px", min=1)
              )
         )
       ),
@@ -2055,7 +2206,7 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
 
 
 
-    max_seq
+    vals$max_seq<-max_seq
   })
   DP_smw<-reactive({
     smw<- vals$smw_dp
@@ -2162,10 +2313,9 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
   observeEvent(input$segrda_panels,{
     vals$segrda_panels<-input$segrda_panels
   })
-  observeEvent(input$segrda_Y,{
-    vals$segrda_Y<-input$segrda_Y})
-  observeEvent(input$segrda_X,{
-    vals$segrda_X<-input$segrda_X})
+
+
+
   observeEvent(input$dp_index_help,{
     showModal(
       modalDialog(
@@ -2302,7 +2452,7 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
   savenames<-reactive({
     switch(
       vals$hand_save,
-      "Create factor using breakpoints from the dissimilarity profile"= {c(paste0("BP_"),length(getBP()))},
+      "Create factor using breakpoints from the dissimilarity profile"= {c(paste0("BP_"),nlevels(as.factor(vals$splitBP[,1])))},
       "Save pwRDA model in"={
         paste0(input$segrda_X,"~",input$segrda_Y,"[factor:",input$bp_column,"]")
       })
@@ -2472,11 +2622,11 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
     )
   })
   output$rda_X<-renderUI({
-    pickerInput(ns("rda_Y"),span("~ X Data", tiphelp("Predictors")), choices=names(vals$saved_data), selected=vals$rda_Y)
+    pickerInput(ns("rda_Y"),span("~ X Data", tiphelp("Predictors")), choices=names(vals$saved_data), selected=vals$cur_rda_Y)
   })
   output$rda_Y<-renderUI({
     req(input$rda_Y)
-    pickerInput(ns("rda_X"),span("Y Data", tiphelp("Response data")), choices=names(vals$saved_data), selected=vals$rda_X)
+    pickerInput(ns("rda_X"),span("Y Data", tiphelp("Response data")), choices=names(vals$saved_data), selected=vals$cur_rda_X)
   })
   output$rda_options<-renderUI({
     req(input$rda_view=='Plot')
@@ -2771,9 +2921,9 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
     mod_downcenter<-callModule(module_server_figs, "downfigs",  vals=vals)
   })
   observeEvent(input$rda_X,
-               vals$rda_X<-input$rda_X)
+               vals$cur_rda_X<-input$rda_X)
   observeEvent(input$rda_Y,
-               vals$rda_Y<-input$rda_Y)
+               vals$cur_rda_Y<-input$rda_Y)
 
 
   data_overwritte<-reactiveValues(df=F)
@@ -2784,7 +2934,7 @@ module_server_desctools<-function (input,output,session,vals,df_colors,newcolhab
     newname$df<-switch(
       vals$hand_save,
       "Create Datalist: Niche results"={name_niche()},
-      "Create factor using breakpoints from the dissimilarity profile"= {c(paste0("BP_"),length(getBP()))},
+      "Create factor using breakpoints from the dissimilarity profile"= {c(paste0("BP_"),nlevels(as.factor(vals$splitBP[,1])))},
       "Save pwRDA model in"={
         paste0(input$segrda_X,"~",input$segrda_Y,"[factor:",input$bp_column,"]")
       }

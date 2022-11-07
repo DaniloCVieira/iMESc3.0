@@ -1750,17 +1750,16 @@ return(mds_data)
 
 }
 #' @export
-ppca<-function(data,key=NULL,keytext=NULL,points=T, text=NULL,palette="black", cex.points=1, cex.text=1, pch=16,textcolor="gray", biplot=T,newcolhabs, pos=2, offset=0) {
+ppca<-function(pca,key=NULL,keytext=NULL,points=T, text=NULL,palette="black", cex.points=1, cex.text=1, pch=16,textcolor="gray", biplot=T,newcolhabs, pos=2, offset=0) {
 
   {
-    X   = as.matrix(data)
-    CEN = X
-    PCA = prcomp(CEN)
+
+    PCA = pca
 
     comps<-summary(PCA)
 
-    exp_pc1<-paste("PC I (",round(comps$importance[2,1],2)*100,"%", ")", sep="")
-    exp_pc2<-paste("PC II (",round(comps$importance[2,2],2)*100,"%", ")", sep="")
+    exp_pc1<-paste("PC I (",round(comps$importance[2,1]*100,2),"%", ")", sep="")
+    exp_pc2<-paste("PC II (",round(comps$importance[2,2]*100,2),"%", ")", sep="")
 
     choices = 1:2
     scale = 1
@@ -1799,7 +1798,10 @@ ppca<-function(data,key=NULL,keytext=NULL,points=T, text=NULL,palette="black", c
   opar<-par(no.readonly=TRUE)
   layout(matrix(c(1,2), nrow=1),widths = c(100,20))
   par(pty = "s",mar=c(5,5,5,1))
-  plot(x, type = "n", xlim = xlim, ylim = ylim, las=1, xlab=exp_pc1, ylab=exp_pc2, main="Principal Component Analysis")
+  plot(x, type = "n", xlim = xlim, ylim = ylim, las=1, xlab=exp_pc1, ylab=exp_pc2, main="Principal Component Analysis",col.sub="black", tck=0)
+  abline(v=0, lty=2, col="gray")
+  abline(h=0, lty=2, col="gray")
+
   if(isTRUE(points)){
     points(x, pch=pch, col=col, cex=cex.points)
   }
@@ -1819,6 +1821,7 @@ if(isTRUE(biplot)){
     axis(3,padj=1, tck=-0.01); axis(4, las=1)
     boxtext(x =y[,1], y = y[,2], labels = rownames(y), col.bg = adjustcolor("white", 0.2),  cex=1, border.bg  ="gray80", pos=3)
 
+    PCA$rotation[,1]*10
     #text(y, labels = ylabs, font=2, cex=.8, col=)
     arrow.len = 0.1
     arrows(0, 0, y[, 1L] * 0.8, y[, 2L] * 0.8,
@@ -2307,7 +2310,7 @@ str_factors<-function(factors, palette="viridis",newcolhabs)
 
 
 #' @export
-str_numerics<-function(numerics)
+str_numerics<-function(numerics, cextext=1)
 {
 
   par(mar=c(0,0,0,0), cex=2)
@@ -2317,21 +2320,21 @@ str_numerics<-function(numerics)
   layout(m, widths = c(.2,.35,.35))
   opar<-par(no.readonly=TRUE)
   plot.new()
-  text(.5,.5,"Variable")
+  text(.5,.5,"Variable", cex=cextext)
   plot.new()
-  text(  seq(0.1,0.9, length.out=6),.5,c('Min.','1st Qu.','Median','Mean','3rd Qu. ',' Max.'))
+  text(  seq(0.1,0.9, length.out=6),.5,c('Min.','1st Qu.','Median','Mean','3rd Qu. ',' Max.'), cex=cextext)
   plot.new()
-  text(.5,.5,"Histogram")
+  text(.5,.5,"Histogram", cex=cextext)
 
   for(i in 1: ncol(numerics))
   {
     plot.new()
-    text(.5,.5,colnames(numerics)[i])
+    text(.5,.5,colnames(numerics)[i], cex=cextext)
   }
   for(i in 1: ncol(numerics))
   {
     plot.new()
-    text(  seq(0.1,0.9, length.out=6),.5,round(summary(numerics[,i]),3))
+    text(  seq(0.1,0.9, length.out=6),.5,round(summary(numerics[,i]),3), cex=cextext)
   }
 
   for(i in 1: ncol(numerics))
