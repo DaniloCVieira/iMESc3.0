@@ -689,9 +689,9 @@ factor.repr <- function(x){
 getConfusion<-function(rf)
 {
   ConfMat<-list()
-  if(class(rf)=="train"){
+  if(class(rf)[1]=="train"){
     ConfMat<-confusionMatrix(rf)
-  } else  if(class(rf)=='table'){  ConfMat<-confusionMatrix(rf)} else{
+  } else  if(class(rf)[1]=='table'){  ConfMat<-confusionMatrix(rf)} else{
   if(sum(names(rf)=="finalModel")==0)
   {
     ConfMat$table<-rf$confusion[,-c(ncol(rf$confusion))]
@@ -1166,7 +1166,7 @@ plotCM<-function(rf, palette="turbo",newcolhabs, font_color="black", title="Conf
     size = 18,face="bold",
   )
 
-  if(class(rf)=="randomForest"){
+  if(class(rf)[1]=="randomForest"){
     ggtab<-tab_add_footnote(ggtab,  gsub("Confusion Matrix","",attr(rf,'title')), face="italic")
   } else{
     ggtab<-tab_add_footnote(ggtab,  gsub("Confusion Matrix","",attr(getConfusion(rf),'title')), face="italic")

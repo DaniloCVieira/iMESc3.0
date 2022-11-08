@@ -2801,7 +2801,7 @@ output$summ_trees<-renderPlot({
   req(input$predrf_newY_tree)
   req(input$rfpred_which)
   m<-vals$RF_results
-  req(m$modelType=="Regression")
+  #req(m$modelType=="Regression")
   pred<-predall_rf()
   pred <- pred$individual
   model_data<-test_rf()
@@ -2813,8 +2813,11 @@ output$summ_trees<-renderPlot({
   req(!is.null(vals$tree_rs))
   req(input$q_class_toptrees)
 
+  if(m$modelType=="Regression"){
   pic<-order(vals$tree_rs$Rsquared, decreasing=T)[1:input$q_class_toptrees]
-
+  } else{
+    pic<-order(vals$tree_rs$Accuracy, decreasing=T)[1:input$q_class_toptrees]
+}
 
   pred<-data.frame(pred[,pic])
   ref1<-rownames(model_data)
@@ -2939,6 +2942,8 @@ output$summ_trees<-renderPlot({
 
 
   })
+
+
   get_forest_class<-reactive({
     req(input$predrf_newY_tree)
     req(input$splitdata_trees)
@@ -2946,11 +2951,16 @@ output$summ_trees<-renderPlot({
     m<-vals$RF_results
     req(m$modelType=="Classification")
     pred<-predall_rf()
-    pred.ind <- pred$individual
+    pred <- pred$individual
     model_data<-test_rf()
     obs_data<-RF_observed2()
+
+
+    pic<-order(vals$tree_rs$Accuracy, decreasing=T)[1:input$q_class_toptrees]
+    pred<-data.frame(pred[,pic])
+
     obs_data<-data.frame(obs_data)
-    data=t(pred.ind)
+    data=t(pred)
     d=1:ncol(data)
     res<-split(d, ceiling(seq_along(d)/input$nhist_tree))
     options_num<-lapply(res,function (x) range(x))
@@ -2962,7 +2972,7 @@ output$summ_trees<-renderPlot({
     res<-data.frame(do.call(rbind,lapply(pred_fac, function(x) table(x))))
     rownames(res)<-colnames(data)
     colnames(res)<-m$levels
-    attr(res,'ntree')<-ncol(pred.ind)
+    attr(res,'ntree')<-ncol(pred)
     attr(res,'obs')<-obs
     vals$get_forest_class<-res_forest<-res
     vals$get_forest_class
@@ -2987,7 +2997,7 @@ output$summ_trees<-renderPlot({
     req(input$predrf_newY_tree)
     req(input$rfpred_which)
     get_rtrees()
-    req(!is.null(vals$tree_rs$Rsquared))
+    req(!is.null(vals$tree_rs))
 
     #tree_rs<-data.frame(do.call(rbind,lapply(data.frame(pred),function(x)
       #postResample(x,obs_data))))
@@ -3088,6 +3098,7 @@ output$summ_trees<-renderPlot({
   output$forestbyclass<- renderPlot({
     res_forest<-get_forest_class()
     vals$plot_florest_class<-plot_florest_class(res_forest,vals$newcolhabs, palette=input$forest_col)
+    vals$plot_florest_class
   })
   observeEvent(input$predrf_newY_tree,{
     vals$predrf_newY_tree<-input$predrf_newY_tree

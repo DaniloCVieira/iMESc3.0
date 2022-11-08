@@ -2,7 +2,7 @@
 rm(list=ls())
 
 version<-strong("Version: 2.1.0.1")
-last_update<-"2022-10-04"
+last_update<-"2022-11-08"
 #last_update<-format(Sys.Date(),"%d-%m-%Y")
 
 TESTE<- reactive({

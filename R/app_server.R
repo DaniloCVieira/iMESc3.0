@@ -188,7 +188,7 @@ app_server <- function(input, output, session) {
       dev.off()
       palette1<-base64enc::dataURI(file =outfile,mime = "image/png")
       vals$colors_img<-rbind(vals$colors_img,data.frame(val=palname,img= sprintf(paste0(img(src = palette1, height = '20',width = '100',style="margin-top:-40px;margin-bottom:-40px;margin-left:-20px;margin-right:-20px;") ))))
-      vals$newcolhabs[[palname]]<-colorRampPalette(colors)
+      vals$newcolhabs[[palname]]<-colorRampPalette(colors,alpha=T)
 
     }
     vals$once_cols<-T
@@ -1937,7 +1937,7 @@ app_server <- function(input, output, session) {
         fluidRow(
           column(12,
 
-                 span("+",checkboxInput("showfactors","Labels", vals$showfactors, width="75px")),uiOutput("show_map_labels")
+                 div("+",checkboxInput("showfactors","Labels", vals$showfactors, width="75px")),uiOutput("show_map_labels")
           )
         )
     )
@@ -1949,7 +1949,7 @@ app_server <- function(input, output, session) {
         fluidRow(
           column(12,
 
-                 span("+",checkboxInput("showcoords","Coords", vals$showcoords, width="75px")),uiOutput("show_map_coords")
+                 div("+",checkboxInput("showcoords","Coords", vals$showcoords, width="75px")),uiOutput("show_map_coords")
           )
         )
     )
@@ -2090,27 +2090,29 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
              span(
                "+",
                checkboxInput("map_1a_base","Base Shape", T, width="120px"),
-               div(class="palette",
-                   span("+ Color:",
+               div(style="padding-left: 15px",
+                 div(class="palette",
+                     span("+ Color:",
+                          inline(div(
+                            class = "ident-picker",
+                            pickerInput(inputId = "base_col",label = NULL,choices =   vals$colors_img$val[getsolid_col()],choicesOpt = list(content =   vals$colors_img$img[getsolid_col()]),options=list(container="body"),inline=F, width="80px", selected=vals$base_col)))
+                     ),
+                     span("+ Transp:",
+                          numericInput("base_lighten",NULL,value=vals$base_lighten, width="80px", min=0, max=1, step=0.1)
+                     )
+                 ),
+                 div(
+                   class="palette",
+                   span("+ Border color:",
                         inline(div(
                           class = "ident-picker",
-                          pickerInput(inputId = "base_col",label = NULL,choices =   vals$colors_img$val[getsolid_col()],choicesOpt = list(content =   vals$colors_img$img[getsolid_col()]),options=list(container="body"),inline=F, width="80px", selected=vals$base_col)))
-                   ),
-                   span("+ Transp:",
-                        numericInput("base_lighten",NULL,value=vals$base_lighten, width="80px", min=0, max=1, step=0.1)
+                          pickerInput(inputId = "base_col_border",label = NULL,choices =   vals$colors_img$val[getsolid_col()],choicesOpt = list(content =   vals$colors_img$img[getsolid_col()]),options=list(container="body"),inline=F, width="80px", selected=vals$base_col_border)))
                    )
-               ),
-               div(
-                 class="palette",
-                 span("+ Border color:",
-                      inline(div(
-                        class = "ident-picker",
-                        pickerInput(inputId = "base_col_border",label = NULL,choices =   vals$colors_img$val[getsolid_col()],choicesOpt = list(content =   vals$colors_img$img[getsolid_col()]),options=list(container="body"),inline=F, width="80px", selected=vals$base_col_border)))
                  )
-               )
 
+               )
              )
-           ))
+               ))
   })
   output$map_1b_discrete<-renderUI({
 
@@ -2140,8 +2142,8 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
     req(input$choices_map=='Numeric-Attribute' & isFALSE(input$scatter_3d))
     fluidRow(
       column(12,
-             span("+",checkboxInput("scale_map","Scale", vals$scale_map, width="100px")),
-             column(12,
+             div(span("+",checkboxInput("scale_map","Scale", vals$scale_map, width="100px"))),
+             div(style="padding-left: 15px",
                     uiOutput("scalesize_size"),
                     uiOutput("scalesize_color")
              )
@@ -2213,28 +2215,30 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
              span(
                "+",
                checkboxInput("map_1f_layer","Layer Shape", T, width="120px"),
-               div(class="palette",
-                   span("+ Color:",
+               div(style="padding-left: 15px",
+                 div(class="palette",
+                     span("+ Color:",
+                          inline(div(
+                            class = "ident-picker",
+                            pickerInput(inputId = "layer_col",label = NULL,choices =   vals$colors_img$val[getsolid_col()],choicesOpt = list(content =   vals$colors_img$img[getsolid_col()]),options=list(container="body"),inline=F, width="80px", selected=vals$layer_col)))
+                     ),
+                     span("+ Transp:",
+                          numericInput("layer_lighten",NULL,value=vals$layer_lighten, width="80px", min=0, max=1, step=0.1)
+                     )
+                 ),
+                 div(
+                   class="palette",
+                   span("+ Border color:",
                         inline(div(
                           class = "ident-picker",
-                          pickerInput(inputId = "layer_col",label = NULL,choices =   vals$colors_img$val[getsolid_col()],choicesOpt = list(content =   vals$colors_img$img[getsolid_col()]),options=list(container="body"),inline=F, width="80px", selected=vals$layer_col)))
-                   ),
-                   span("+ Transp:",
-                        numericInput("layer_lighten",NULL,value=vals$layer_lighten, width="80px", min=0, max=1, step=0.1)
+                          pickerInput(inputId = "layer_col_border",label = NULL,choices =   vals$colors_img$val[getsolid_col()],choicesOpt = list(content =   vals$colors_img$img[getsolid_col()]),options=list(container="body"),inline=F, width="80px", selected=vals$layer_col_border)))
                    )
-               ),
-               div(
-                 class="palette",
-                 span("+ Border color:",
-                      inline(div(
-                        class = "ident-picker",
-                        pickerInput(inputId = "layer_col_border",label = NULL,choices =   vals$colors_img$val[getsolid_col()],choicesOpt = list(content =   vals$colors_img$img[getsolid_col()]),options=list(container="body"),inline=F, width="80px", selected=vals$layer_col_border)))
                  )
+
+
                )
 
-
-             )
-           ))
+               )))
   })
   output$map_1e_limits<-renderUI({
     base_shape=attr(getdata_map(),"base_shape")
@@ -2273,7 +2277,7 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
     inline(pickerInput("saved_maps2",NULL, choices=names(vals$saved_maps),options=list(container="body"), width="130px"))  })
   output$show_map_coords<-renderUI({
     req(isTRUE(input$showcoords))
-    column(12,
+    div(style="padding-left: 15px",
            column(12,class="palette",' + Color:',
                   pickerInput(inputId = "col_coords",
                               label = NULL,
@@ -2289,7 +2293,7 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
   })
   output$show_map_labels<-renderUI({
     req(isTRUE(input$showfactors))
-    column(12,
+    div(style="padding-left: 15px",
            column(12,' + Factor:',
                   pickerInput("labels_coords",NULL, choices=colnames( attr(getdata_map(),"factors")),options=list(container="body"), width="75px", inline=T)),
            #
@@ -2594,6 +2598,7 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
     req(length(vals$saved_data)>0)
     req(input$data_map)
     data<-vals$saved_data[[input$data_map]]
+    req(length(data)>0)
     if(nrow(data)>1000){
       vals$map_res<-NULL
 
@@ -2822,7 +2827,7 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
     coords<-attr(data,"coords")
     data=  switch(input$choices_map,
                   'Factor-Attribute'=rev(attr(data,"factors")),
-                  'Numeric-Attribute'=colnames(data))
+                  'Numeric-Attribute'=data)
     colnames(coords) <- c ("x", "y")
     zvalues<-data[,input$var_map]
     geo.dist<-geodist(x=coords, paired=T, measure="geodesic")
@@ -11339,7 +11344,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
     tipify(
       colourpicker::colourInput(
         "col", NULL, vals$cur_col_cc,allowTransparent=T,
-        closeOnClick=T,
+        closeOnClick=F,
       ),"Click to change color"
     )
   })
@@ -11399,7 +11404,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
             div(inline(div(style="width: 140px",
                            renderPlot({
                              par(mar=c(0,0,0,0),mai=c(0,0,0,0),mgp=c(0,0,0),xpd=T,ann=F, bg=NA, fg=NA)
-                             image(t(matrix(seq(0,1,length.out=100), nrow=1)), axes=F,col=  colorRampPalette(  vals$newpalette_colors)(100))
+                             image(t(matrix(seq(0,1,length.out=100), nrow=1)), axes=F,col=  colorRampPalette(  vals$newpalette_colors,alpha=T)(100))
                            }, height =30)))
             )
 
@@ -11442,11 +11447,11 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
     outfile <- tempfile(fileext = ".png")
     png(outfile, height =70)
     par(mar=c(0,0,0,0),mai=c(0,0,0,0),mgp=c(0,0,0),xpd=T,ann=F, bg=NA, fg=NA)
-    image(t(matrix(seq(0,1,length.out=100), nrow=1)), axes=F,col=  colorRampPalette(vals$newpalette_colors)(100))
+    image(t(matrix(seq(0,1,length.out=100), nrow=1)), axes=F,col=  colorRampPalette(vals$newpalette_colors,alpha=T)(100))
     dev.off()
     palette1<-base64enc::dataURI(file =outfile,mime = "image/png")
     vals$colors_img<-rbind(vals$colors_img,data.frame(val=palette_name,img= sprintf(paste0(img(src = palette1, height = '20',width = '70',style="margin-top:-40px;margin-bottom:-40px;margin-left:-20px;margin-right:-20px;") ))))
-    vals$newcolhabs[[palette_name]]<-colorRampPalette(vals$newpalette_colors)
+    vals$newcolhabs[[palette_name]]<-colorRampPalette(vals$newpalette_colors,alpha=T)
     vals$created_pal<-T
     updatePickerInput(session,'available_palette',selected = palette_name)
     vals$newpalette_colors<-NULL
