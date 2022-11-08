@@ -430,9 +430,14 @@ div#driver-highlighted-element-stage {
     outline: 5000px solid rgba(0, 0, 0, .75);
 }
 #teste_style .btn-group {color: red}
+
+
 #shp_help .popover{
             max-width: 400px;
           }
+
+
+
 #mtry_grid{
 margin: 0px;
 padding: 0px;
@@ -1765,6 +1770,11 @@ background-color: white;
           box-shadow: inset 0px 1px 5px #797979ff;
 }
 
+#create_datalist .popover{
+    z-index: 99999999;
+            min-width: 400px;
+          }
+
 
 #upload_tools .popover div{postion: absolute;
   z-index: 999999;
@@ -1903,4 +1913,9 @@ font-size: 12px;
 border-radius: 3px 3px 3px 3px;
  }
 
+
+.saved_models{
+ vertical-align: text-top;display: table;
+  max-width: 200px;
+}
 

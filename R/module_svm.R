@@ -110,7 +110,7 @@ module_server_svm <- function (input, output, session,vals,df_colors,newcolhabs 
                          fluidRow(style="background: white",
                                   uiOutput(ns("svm_tab3_1")))),
                        tabPanel(
-                         strong("3.2. Performace"),
+                         strong("3.2. Pesvmormace"),
                          fluidRow(style="background: white",
                                   uiOutput(ns("svm_tab3_2")))
                        ),
@@ -768,9 +768,21 @@ module_server_svm <- function (input, output, session,vals,df_colors,newcolhabs 
   output$data_svmX_out<-renderUI({
     if(is.null(vals$cur_data)){vals$cur_data<-1}
     div(
-      div("~ Training Datalist:"),
-      pickerInput(ns("data_svmX"),NULL,choices =names(vals$saved_data),width="150px", selected=vals$cur_data)
+      inline(
+        div(
+          div("~ Training Datalist:"),
+          pickerInput(ns("data_svmX"),NULL,choices =names(vals$saved_data),width="150px", selected=vals$cur_data)
+        )
+      ),      inline(uiOutput(ns("saved_svms")))
+
     )
+  })
+
+  output$saved_svms<-renderUI({
+    req(input$data_svmX)
+    req(length(names(attr(vals$saved_data[[input$data_svmX]],"svm")))>0)
+    div(class="saved_models",
+        icon(verify_fa = FALSE,name=NULL,class="fas fa-hand-point-left"),"-",strong(length(names(attr(vals$saved_data[[input$data_svmX]],"svm")))), "saved model(s)")
   })
 
   output$svm_params<- renderUI({
@@ -965,7 +977,7 @@ module_server_svm <- function (input, output, session,vals,df_colors,newcolhabs 
                        tabPanel("1. Summary",value="svm_tab2_1",
                                 uiOutput(ns("svm_tab_2_1"))
                        ),
-                       tabPanel("2. Performace",value="svm_tab2_2",
+                       tabPanel("2. Pesvmormace",value="svm_tab2_2",
                                 uiOutput(ns("svm_tab_2_2"))
                        ),
                        tabPanel("3. Variable importance",
@@ -1126,7 +1138,7 @@ module_server_svm <- function (input, output, session,vals,df_colors,newcolhabs 
   })
   output$svm_tab_errors_train<-DT::renderDataTable({
     m<-vals$svm_results
-    table<-accu_rf_class(m)
+    table<-accu_svm_class(m)
     vals$svm_down_errors_train<-table
     table
     DT::datatable(table, options=list(pageLength = 20, info = FALSE,lengthMenu = list(c(20, -1), c( "20","All")), autoWidth=T,dom = 'lt'), rownames = TRUE,class ='compact cell-border')
@@ -1597,7 +1609,7 @@ module_server_svm <- function (input, output, session,vals,df_colors,newcolhabs 
     req(!is.null(vals$hand_save))
     newname$df<-switch(
       vals$hand_save,
-      ##RF
+      ##svm
       "Save SVM model in"= { name_save_svm()},
       "Create Datalist: SVM training errors -obs"={name_svm_train_errors()},
       "Create Datalist: SVM predictions"={ name_svm_pred()},
@@ -1718,7 +1730,7 @@ module_server_svm <- function (input, output, session,vals,df_colors,newcolhabs 
       uiOutput(ns("databank_storage")),
       title=strong(icon("fas fa-save"),'Save'),
       footer=column(12,
-                    uiOutput(ns('saverf_teste')),
+                    uiOutput(ns('savesvm_teste')),
                     fluidRow(modalButton(strong("cancel")),
                              inline(uiOutput(ns("save_confirm")))
                     )

@@ -642,9 +642,21 @@ module_server_knn <- function (input, output, session,vals,df_colors,newcolhabs 
   output$data_knnX_out<-renderUI({
     if(is.null(vals$cur_data)){vals$cur_data<-1}
     div(
-      div("~ Training Datalist:"),
-      pickerInput(ns("data_knnX"),NULL,choices =names(vals$saved_data),width="150px", selected=vals$cur_data)
+      inline(
+        div(
+          div("~ Training Datalist:"),
+          pickerInput(ns("data_knnX"),NULL,choices =names(vals$saved_data),width="150px", selected=vals$cur_data)
+        )
+      ),      inline(uiOutput(ns("saved_knns")))
+
     )
+  })
+
+  output$saved_knns<-renderUI({
+    req(input$data_knnX)
+    req(length(names(attr(vals$saved_data[[input$data_knnX]],"knn")))>0)
+    div(class="saved_models",
+        icon(verify_fa = FALSE,name=NULL,class="fas fa-hand-point-left"),"-",strong(length(names(attr(vals$saved_data[[input$data_knnX]],"knn")))), "saved model(s)")
   })
 
   output$knn_params<- renderUI({

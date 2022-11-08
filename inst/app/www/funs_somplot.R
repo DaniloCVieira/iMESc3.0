@@ -106,7 +106,7 @@ getsom_results<-function(som_pred,which)
 
 
 #' @export
-pcorr<-function(m,npic=10, indicate=c("var","cor"), col.arrow="gray80",cex.var=1, cex=1, pch=16, labels.ind=NULL,bg_palette="turbo", factor.pal="gray", points=T,ncol=1,insetx=0,insety=0,alpha.legend=0.85, predict=FALSE, pred_col="firebrick", alpha_bg=1, border="white",col.text="black", legend=T,newcolhabs,bg_vector=NULL,showtrain=T, xclus=NULL,yclus=NULL,labclus=NULL, main="", bottom_leg=NULL){
+pcorr<-function(m,npic=10, indicate=c("var","cor"), col.arrow="gray80",cex.var=1, cex=1, pch=16, labels.ind=NULL,bg_palette="turbo", factor.pal="gray", points=T,ncol=1,insetx=0,insety=0,alpha.legend=0.85, predict=FALSE, pred_col="firebrick", alpha_bg=1, border="white",col.text="black", legend=T,newcolhabs,bg_vector=NULL,showtrain=T, xclus=NULL,yclus=NULL,labclus=NULL, main="", bottom_leg=NULL,classif=NULL){
   indicadores<-NULL
   result<-NULL
 
@@ -145,9 +145,9 @@ if(colreq[1]!=colreq[2]){
     par(mar=c(7,6,2,0))
     set.seed(1)
     if(isFALSE(points)){
-      plot(m,"mapping",shape=shape, border=border, main=main,keepMargins =T, bgcol=colcodes,codeRendering=F, labels=labels.ind, cex=cex, pch=pch, col=col)}else{
+      plot(m,"mapping",shape=shape, border=border, main=main,keepMargins =T, bgcol=colcodes,codeRendering=F, labels=labels.ind, cex=cex, pch=pch, col=col,classif=classif )}else{
 
-      plot(m,"mapping",shape=shape, border=border, main=main,keepMargins =T, bgcol=colcodes,codeRendering=F, labels=NULL, cex=cex, pch=pch, col=col)
+      plot(m,"mapping",shape=shape, border=border, main=main,keepMargins =T, bgcol=colcodes,codeRendering=F, labels=NULL, cex=cex, pch=pch, col=col,classif=classif )
       }
     if(!isFALSE(predict)){
 

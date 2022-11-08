@@ -69,8 +69,8 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
   bmu_p_symbol<-reactiveValues(df= df_symbol$val[1])
   bmu_symbol<-reactiveValues(df= df_symbol$val[1])
   output$showgrid <- renderPlot({
-    if(isTRUE(input$splitdata_som)){data=training_data$df}else{
-      data = getdata_som()}
+
+    data = getdata_som()
 
 
     validate(need(input$xdim!="", ""))
@@ -100,7 +100,7 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
     data = data.frame(vals$saved_data[[input$data_som]],"factors")
     column(
       12,
-      selectInput(ns("variable_pproperty"),
+      pickerInput(ns("variable_pproperty"),
                   label = "select a variable",
                   choices = colnames(data)
       )
@@ -975,7 +975,7 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
             splitLayout(cellWidths = c("75%","25%"),
                         div(
                           span(strong("X:"), inline(uiOutput(ns("som_x"))),
-                               inline(uiOutput(ns("som_partition")))
+                               #inline(uiOutput(ns("som_partition")))
                           ),
                           inline(uiOutput(ns("som_models"))),
                           inline(uiOutput(ns("save_som"))),
@@ -1008,10 +1008,23 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
   })
   output$som_x<-renderUI({
     div(
-      div("~ Training Datalist:"),
-      pickerInput(ns("data_som"),NULL,choices =names(vals$saved_data),width="250px", selected=vals$cur_data)
+      inline(
+        div(
+          div("~ Training Datalist:"),
+          pickerInput(ns("data_som"),NULL,choices =names(vals$saved_data),width="250px", selected=vals$cur_data)
+        )
+      ),      inline(uiOutput(ns("saved_soms")))
+
     )
   })
+
+  output$saved_soms<-renderUI({
+    req(input$data_som)
+    req(length(names(attr(vals$saved_data[[input$data_som]],"som")))>0)
+    div(class="saved_models",
+        icon(verify_fa = FALSE,name=NULL,class="fas fa-hand-point-left"),"-",strong(length(names(attr(vals$saved_data[[input$data_som]],"som")))), "saved model(s)")
+  })
+
   output$som_y<-renderUI({
     req(input$som_tab)
     if(is.null(vals$cur_som_type2)){vals$cur_som_type2<-"Numeric"}
@@ -1113,10 +1126,6 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
 
                            ,
                            column(12,
-
-                                  span(class="finesom_btn",
-                                       bsButton(ns("finetopo"),tipify(span("Fine tuning*"), "show all parameters available"), type="toggle", value=tunesom$finetopo)
-                                  ),
                                   uiOutput(ns("finetopo_out")))))))
   })
   output$training_panel<-renderUI({
@@ -1221,10 +1230,10 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
   })
   output$sompred_type_datalist<-renderUI({
     req(input$sompred_type =='Datalist')
-    div(selectInput(ns("predsom_new"),"Datalist",choices=names(vals$saved_data[getobs_somX()]), selected=vals$predsom_new))
+    div(pickerInput(ns("predsom_new"),"Datalist",choices=names(vals$saved_data[getobs_somX()]), selected=vals$predsom_new))
   })
   output$predsom_var<-renderUI({
-    selectInput(ns("predsom_var"),"variable",colnames(test_som()))
+    pickerInput(ns("predsom_var"),"variable",colnames(test_som()))
   })
   output$pred_som_results<-renderUI({
 
@@ -1269,7 +1278,7 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
           numericInput(ns("a2"),label = "a2",value = tunesom$a2,step = 0.01),
           numericInput(ns("r1"),label = "r1",value = tunesom$r1),
           numericInput(ns("r2"),label = "r2",value = tunesom$r2,step = 0.01 )),
-        splitLayout(selectInput(ns("mode"), "mode", choices = c("online","batch", "pbatch"), selected=tunesom$mode),
+        splitLayout(pickerInput(ns("mode"), "mode", choices = c("online","batch", "pbatch"), selected=tunesom$mode),
                     numericInput(ns("maxna"),"maxNA.fraction",value = tunesom$maxna,step = 0.01)))
 
   })
@@ -1281,7 +1290,7 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
         div(br()),
         splitLayout(
           style="margin-top: 10px",
-          selectInput(ns("distmethod"),strong("dist.fcts",tipify(icon("fas fa-question-circle"),"Distance measure between each neuron and input data")),
+          pickerInput(ns("distmethod"),strong("dist.fcts",tipify(icon("fas fa-question-circle"),"Distance measure between each neuron and input data")),
                       choices = c("BrayCurtis","euclidean","sumofsquares","manhattan",
                                   "tanimoto"),selected=tunesom$distmethod),
           numericInput(ns("rlen"),strong("rlen",tipify(icon("fas fa-question-circle"),"The number of times the complete dataset will be presented to the network")),value = tunesom$rlen,min = 1,step = 1),
@@ -1290,10 +1299,10 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
 
   })
   output$finetopo_out<-renderUI({
-    req(isTRUE(input$finetopo))
+
     splitLayout(id="finetopo_out",
-                selectInput(ns("neighbourhood.fct"),label = "neighbourhood.fct",choices = c("bubble","gaussian"),selected=tunesom$neighbourhood.fct),
-                selectInput(ns("toroidal"),label = "toroidal",choices = c(F, T), selected=tunesom$toroidal))
+                pickerInput(ns("neighbourhood.fct"),label = "neighbourhood.fct",choices = c("bubble","gaussian"),selected=tunesom$neighbourhood.fct),
+                pickerInput(ns("toroidal"),label = "toroidal",choices = c(F, T), selected=tunesom$toroidal))
 
   })
   output$somgridtopo<-renderUI({topocontrol()})
@@ -1776,7 +1785,6 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
     req(input$data_som)
     data_o<-data<-vals$saved_data[[input$data_som]]
     factors<-attr(data,"factors")
-    req(input$som_test_pick)
     if(length(input$som_test_pick)>0){
       if(input$som_test_pick!="None"){
         req(input$som_test_ref)
@@ -1910,7 +1918,7 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
              splitLayout(cellWidths = c('30%','30%','40%'),
                          numericInput(ns("xdim"),"xdim",value = tunesom$xdim,min = 0,step = 1),
                          numericInput(ns("ydim"),"ydim",value = tunesom$ydim,min = 0,step = 1),
-                         selectInput(ns("topo"),"topo",choices = c("hexagonal", "rectangular"),selected=tunesom$topo)),
+                         pickerInput(ns("topo"),"topo",choices = c("hexagonal", "rectangular"),selected=tunesom$topo)),
              column(10, plotOutput(ns("showgrid"), height = "150px")),
              column(2, align = "right", actionButton(ns("resettopo"), "reset"))
 
@@ -2026,7 +2034,7 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
   })
   observeEvent(input$data_som,{
     if(anyNA(getdata_som())){
-      updateSelectInput(session,"distmethod")
+      updatePickerInput(session,"distmethod")
     }
   })
   observeEvent(input$finetopo,{
@@ -2137,10 +2145,12 @@ module_server_som<-function (input,output,session,vals,df_colors,newcolhabs,df_s
     updateTabsetPanel(session, "som_tab", "som_tab2")
     updateTabsetPanel(session, "som_tab", "train_tab2")
     updateTabsetPanel(session, "som_res", "train_tab1")
-    # updateSelectInput(session,"som_models",                      choices=c("new som (unsaved)", names(attr(vals$saved_data[[input$data_som]],"som"))))
-    updateSelectInput(session,"som_models",
+    # updatePickerInput(session,"som_models",                      choices=c("new som (unsaved)", names(attr(vals$saved_data[[input$data_som]],"som"))))
+    updatePickerInput(session,"som_models",
                       selected="new som (unsaved)")
   })
+
+
   observeEvent(input$resetsom, {
     tunesom$rlen=500
     tunesom$distmethod="BrayCurtis"

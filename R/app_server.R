@@ -11240,7 +11240,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
       div(div(
         inline(div(id="create_datalist",
                    div(class="create_datalist",
-                       popify(bsButton("bank_button", icon(verify_fa = FALSE,name=NULL,class="fas fa-plus"), style="radio_cogs",size="small"),"Data Input",textinput(),options=list(container="body"))
+                       popify(div(class='save_changes',bsButton("bank_button", icon(verify_fa = FALSE,name=NULL,class="fas fa-plus"), style="radio_cogs",size="small")),"Data Input",textinput())
                    )
         )),
         inline(uiOutput("bank_input0")),

@@ -1736,10 +1736,22 @@ req(input$rf_useinter)
   output$data_rfX_out<-renderUI({
     if(is.null(vals$cur_data)){vals$cur_data<-1}
     div(
-      div("~ Training Datalist:"),
-      pickerInput(ns("data_rfX"),NULL,choices =names(vals$saved_data),width="150px", selected=vals$cur_data)
+      inline(
+        div(
+          div("~ Training Datalist:"),
+          pickerInput(ns("data_rfX"),NULL,choices =names(vals$saved_data),width="150px", selected=vals$cur_data)
+        )
+      ),      inline(uiOutput(ns("saved_rfs")))
+
     )
   })
+output$saved_rfs<-renderUI({
+  req(input$data_rfX)
+  req(length(names(attr(vals$saved_data[[input$data_rfX]],"rf")))>0)
+  div(class="saved_models",
+    icon(verify_fa = FALSE,name=NULL,class="fas fa-hand-point-left"),"-",strong(length(names(attr(vals$saved_data[[input$data_rfX]],"rf")))), "saved model(s)")
+})
+
   observeEvent(input$data_rfX,{
     vals$cur_data<-input$data_rfX
   })

@@ -160,7 +160,7 @@ module_server_nb <- function (input,output,session,vals,df_colors,newcolhabs ){
                          fluidRow(style="background: white",
                                   uiOutput(ns("nb_tab3_1")))),
                        tabPanel(
-                         strong("3.2. Performace"),
+                         strong("3.2. Penbormace"),
                          fluidRow(style="background: white",
                                   uiOutput(ns("nb_tab3_2")))
                        ),
@@ -976,10 +976,25 @@ pred_test_nb<-reactive({
   output$data_nbX_out<-renderUI({
     if(is.null(vals$cur_data)){vals$cur_data<-1}
     div(
-      div("~ Training Datalist:"),
-      pickerInput(ns("data_nbX"),NULL,choices =names(vals$saved_data),width="150px",selected=vals$cur_data)
+      inline(
+        div(
+          div("~ Training Datalist:"),
+          pickerInput(ns("data_nbX"),NULL,choices =names(vals$saved_data),width="150px", selected=vals$cur_data)
+        )
+      ),      inline(uiOutput(ns("saved_nbs")))
+
     )
   })
+
+
+  output$saved_nbs<-renderUI({
+    req(input$data_nbX)
+    req(length(names(attr(vals$saved_data[[input$data_nbX]],"nb")))>0)
+    div(class="saved_models",
+        icon(verify_fa = FALSE,name=NULL,class="fas fa-hand-point-left"),"-",strong(length(names(attr(vals$saved_data[[input$data_nbX]],"nb")))), "saved model(s)")
+  })
+
+
   observeEvent(input$data_nbX,{
     vals$cur_data<-input$data_nbX
   })
@@ -1172,7 +1187,7 @@ pred_test_nb<-reactive({
              tabPanel("1. Summary",
                       uiOutput(ns("nb_tab_2_1"))
                       ),
-             tabPanel("2. Performace",
+             tabPanel("2. Penbormace",
                       uiOutput(ns("nb_tab_2_2"))
                       ),
              tabPanel(if(lapply(m$finalModel$tables,class)[[1]]=="table"){"3. Mosaic plot"} else {"3. Density plot"},
@@ -1414,7 +1429,7 @@ output$nb_densplot<-renderUI({
 
   output$nb_tab_errors_train<-DT::renderDataTable({
     m<-vals$nb_results
-    table<-accu_rf_class(m)
+    table<-accu_nb_class(m)
     vals$nb_down_errors_train<-table
     table
     DT::datatable(table,options=list(pageLength = 20,info = FALSE,lengthMenu = list(c(20,-1),c( "20","All")),autoWidth=T,dom = 'lt'),rownames = TRUE,class ='compact cell-border')
@@ -1642,7 +1657,7 @@ output$confusion_nb2<-renderPrint({
     req(!is.null(vals$hand_save))
     newname$df<-switch(
       vals$hand_save,
-      ##RF
+      ##nb
       "Save NB model in"= { name_save_nb()},
       "Create Datalist: NB training errors -obs"={name_nb_train_errors()},
       "Create Datalist: NB predictions"={ name_nb_pred()},
@@ -1761,7 +1776,7 @@ output$confusion_nb2<-renderPrint({
       uiOutput(ns("databank_storage")),
       title=strong(icon("fas fa-save"),'Save'),
       footer=column(12,
-                    uiOutput(ns('saverf_teste')),
+                    uiOutput(ns('savenb_teste')),
                     fluidRow(modalButton(strong("cancel")),
                              inline(uiOutput(ns("save_confirm")))
                     )

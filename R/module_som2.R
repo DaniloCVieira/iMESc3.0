@@ -65,10 +65,7 @@ module_server_som2<-function (input,output,session,vals,df_colors,newcolhabs,df_
   bmu_p_symbol<-reactiveValues(df= df_symbol$val[1])
   bmu_symbol<-reactiveValues(df= df_symbol$val[1])
   output$showgrid <- renderPlot({
-    if(isTRUE(input$splitdata_som)){data=training_data$df}else{
-      data = getdata_som()}
-
-
+    data = getdata_som()
     validate(need(input$xdim!="", ""))
     validate(need(input$ydim!="", ""))
     validate(need( (input$xdim*input$ydim)<=nrow(data), "The number of map units must be less than or equal to the number of observations. Please decrease the 'xdim' and/or 'ydim' dimensions"))
@@ -971,8 +968,7 @@ module_server_som2<-function (input,output,session,vals,df_colors,newcolhabs,df_
         div(class="well3",
             splitLayout(cellWidths = c("75%","25%"),
                         div(
-                          span(strong("X:"), inline(uiOutput(ns("som_x"))),
-                               inline(uiOutput(ns("som_partition")))
+                          span(strong("X:"), inline(uiOutput(ns("som_x")))
                           ),
                           inline(uiOutput(ns("som_models"))),
                           inline(uiOutput(ns("save_som"))),
@@ -999,16 +995,30 @@ module_server_som2<-function (input,output,session,vals,df_colors,newcolhabs,df_
             )
           ),
           inline(uiOutput(ns("som_y"))),
-          inline(uiOutput(ns("som_y_sel")))
+          inline(uiOutput(ns("som_y_sel"))),
+          inline(uiOutput(ns("som_partition")))
 
         ))
   })
   output$som_x<-renderUI({
     div(
-      div("~ Training Datalist:"),
-      pickerInput(ns("data_som"),NULL,choices =names(vals$saved_data),width="250px", selected=vals$cur_data)
+      inline(
+        div(
+          div("~ Training Datalist:"),
+          pickerInput(ns("data_som"),NULL,choices =names(vals$saved_data),width="250px", selected=vals$cur_data)
+        )
+      ),      inline(uiOutput(ns("saved_soms")))
+
     )
   })
+  output$saved_soms<-renderUI({
+    req(input$data_som)
+    req(length(names(attr(vals$saved_data[[input$data_som]],"som")))>0)
+    div(class="saved_models",
+        icon(verify_fa = FALSE,name=NULL,class="fas fa-hand-point-left"),"-",strong(length(names(attr(vals$saved_data[[input$data_som]],"som")))), "saved model(s)")
+  })
+
+
   output$som_y<-renderUI({
     req(input$som_tab)
     if(is.null(vals$cur_som_type2)){vals$cur_som_type2<-"Numeric"}
@@ -1041,14 +1051,14 @@ module_server_som2<-function (input,output,session,vals,df_colors,newcolhabs,df_
            checkboxGroupInput(ns("selecfac"), "Select the factors", choices=colnames(attr(vals$saved_data[[input$data_somY]],"factors"))))
   })
   output$som_partition<-renderUI({
-    req(input$data_som)
+    req(input$data_somY)
     req(input$som_tab)
     if(is.null(vals$cur_partsom)){vals$cur_partsom<-1}
     if(input$som_tab=="som_tab1"){
       div(
         inline(div(
           div(span('Partition:', tiphelp("choose a factor from Datalist X as reference for data partioning"))),
-          div(pickerInput(ns("som_test_pick"),NULL, choices=c("None", colnames(attr(vals$saved_data[[input$data_som]],"factors"))),selected=vals$cur_partsom,width="150px",))
+          div(pickerInput(ns("som_test_pick"),NULL, choices=c("None", colnames(attr(vals$saved_data[[input$data_somY]],"factors"))),selected=vals$cur_partsom,width="150px",))
         )),inline(uiOutput(ns("som_test_ref")))
       )
     }
@@ -1056,10 +1066,10 @@ module_server_som2<-function (input,output,session,vals,df_colors,newcolhabs,df_
   output$som_test_ref<-renderUI({
 
     req(input$som_test_pick!="None")
-    req(input$data_som)
+    req(input$data_somY)
     if(is.null(vals$cur_testsom)){vals$cur_testsom<-1}
-    req(input$som_test_pick%in%colnames(attr(vals$saved_data[[input$data_som]],"factors")))
-    fac<-attr(vals$saved_data[[input$data_som]],"factors")[,input$som_test_pick]
+    req(input$som_test_pick%in%colnames(attr(vals$saved_data[[input$data_somY]],"factors")))
+    fac<-attr(vals$saved_data[[input$data_somY]],"factors")[,input$som_test_pick]
     choices<-levels(fac)
     if(input$som_tab=="som_tab1"){
       div(
@@ -1110,10 +1120,6 @@ module_server_som2<-function (input,output,session,vals,df_colors,newcolhabs,df_
 
                            ,
                            column(12,
-
-                                  span(class="finesom_btn",
-                                       bsButton(ns("finetopo"),tipify(span("Fine tuning*"), "show all parameters available"), type="toggle", value=tunesom$finetopo)
-                                  ),
                                   uiOutput(ns("finetopo_out")))))))
   })
   output$training_panel<-renderUI({
@@ -1287,7 +1293,7 @@ module_server_som2<-function (input,output,session,vals,df_colors,newcolhabs,df_
 
   })
   output$finetopo_out<-renderUI({
-    req(isTRUE(input$finetopo))
+    #req(isTRUE(input$finetopo))
     splitLayout(id="finetopo_out",
                 selectInput(ns("neighbourhood.fct"),label = "neighbourhood.fct",choices = c("bubble","gaussian"),selected=tunesom$neighbourhood.fct),
                 selectInput(ns("toroidal"),label = "toroidal",choices = c(F, T), selected=tunesom$toroidal))
@@ -1777,11 +1783,12 @@ module_server_som2<-function (input,output,session,vals,df_colors,newcolhabs,df_
     if(length(input$som_test_pick)>0){
       if(input$som_test_pick!="None"){
         req(input$som_test_ref)
-        req(input$som_test_pick%in%colnames(factors))
-        fac<-factors[,input$som_test_pick]
+        factors_part<-attr(vals$saved_data[[input$data_somY]],"factors")
+        req(input$som_test_pick%in%colnames(factors_part))
+        fac<-factors_part[,input$som_test_pick]
         pic<-which(fac==input$som_test_ref)
-        factors<-factors[pic,, drop=F]
-        trains<-which(!rownames(data)%in%rownames(factors))
+        factors_part<-factors_part[pic,, drop=F]
+        trains<-which(!rownames(data)%in%rownames(factors_part))
         data<-data[trains,]
         attr(data,"test_data")<-data_o[-trains,]
       }

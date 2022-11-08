@@ -637,9 +637,21 @@ module_server_sgboost <- function (input, output, session,vals,df_colors,newcolh
   output$data_sgboostX_out<-renderUI({
     if(is.null(vals$cur_data)){vals$cur_data<-1}
     div(
-      div("~ Training Datalist:"),
-      pickerInput(ns("data_sgboostX"),NULL,choices =names(vals$saved_data),width="150px", selected=vals$cur_data)
+      inline(
+        div(
+          div("~ Training Datalist:"),
+          pickerInput(ns("data_sgboostX"),NULL,choices =names(vals$saved_data),width="150px", selected=vals$cur_data)
+        )
+      ),      inline(uiOutput(ns("saved_sgboosts")))
+
     )
+  })
+
+  output$saved_sgboosts<-renderUI({
+    req(input$data_sgboostX)
+    req(length(names(attr(vals$saved_data[[input$data_sgboostX]],"sgboost")))>0)
+    div(class="saved_models",
+        icon(verify_fa = FALSE,name=NULL,class="fas fa-hand-point-left"),"-",strong(length(names(attr(vals$saved_data[[input$data_sgboostX]],"sgboost")))), "saved model(s)")
   })
 
   output$sgboost_params<- renderUI({
