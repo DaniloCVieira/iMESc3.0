@@ -237,7 +237,7 @@ div(
   column(12,  style = "position: fixed; overflow: visible;",class="needed",id="header_app",' An Interactive Machine Learning App for Environmental Science'),
   column(12,  style = "position: fixed; overflow: visible;bottom: 0px;z-index: 99",
          fluidRow(class="needed",id="footer_app",
-                  span(em("Version:"),'2.0;',em("Last update:"),last_update)
+                  span(em("Version:"),paste0(packageVersion("imesc"),';'),em("Last update:"),last_update)
          )
   ),
 

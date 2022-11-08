@@ -1,8 +1,14 @@
 
 rm(list=ls())
 
-version<-strong("Version: 2.1.0.1")
-last_update<-"2022-11-08"
+
+#last_update<-"2022-11-08"
+if(getwd()=="D:/R3/imesc/imesc"){
+  last_update<-Sys.Date()
+  saveRDS(last_update,"inst/app/www/last_update.rds")
+
+}
+last_update<-readRDS('inst/app/www/last_update.rds')
 #last_update<-format(Sys.Date(),"%d-%m-%Y")
 
 TESTE<- reactive({
