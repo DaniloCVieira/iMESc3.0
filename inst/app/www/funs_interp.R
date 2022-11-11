@@ -179,13 +179,15 @@ Map_model<-function(data,get,coords,base_shape=NULL,layer_shape=NULL,res=20000, 
     p
   })
 }
-#' @export
-map_style<-function(data,get,coords, p,main="",subtitle="",cex.axes=13,cex.lab=13,cex.main=13,cex.sub=13,cex.leg=13,factors=NULL,cex.fac=13,col.fac="red",showcoords=T, col.coords="black",cex.coords=13,showguides=T, layer_shape=NULL,col.palette, leg="",layer_col="gray",lighten=1.4,newcolhabs,extralayers=NULL,layer_shape_border="gray"){
+#' @export # breaks - if is numeric, length 3 -min, max, len. Else, the breaks
+map_style<-function(data,get,coords, p,main="",subtitle="",cex.axes=13,cex.lab=13,cex.main=13,cex.sub=13,cex.leg=13,factors=NULL,cex.fac=13,col.fac="red",showcoords=T, col.coords="black",cex.coords=13,showguides=T, layer_shape=NULL,col.palette, leg="",layer_col="gray",lighten=1.4,newcolhabs,extralayers=NULL,layer_shape_border="gray", breaks=NULL,key.height=1,keyscale=12, width_hint=0.15,cex_scabar=0.7){
+
   my_rst<-attr(p,"my_rst")
+
   rasterpoints <-data.frame(to_spatial(data.frame( rasterToPoints(my_rst))))
 
   colnames(rasterpoints)<-c("x","y","z")
-
+  if(is.null(breaks)){breaks=pretty(rasterpoints$z)}
 
 
   if(isTRUE(is.factor(data[get][,1]))){
@@ -194,10 +196,13 @@ map_style<-function(data,get,coords, p,main="",subtitle="",cex.axes=13,cex.lab=1
     #fatores<-fatores[,drop=F]
     colhabs=getcolhabs(newcolhabs,col.palette,nlevels(fatores))
 
-    p<-p+ geom_tile(data = rasterpoints , aes(x = x, y = y, fill = factor(z,levels=my_rst@data@attributes[[1]][,1], labels=my_rst@data@attributes[[1]][,2]))) +   scale_fill_manual(values=c(colhabs), name=leg, drop=F)
+    p<-p+ geom_tile(data = rasterpoints , aes(x = x, y = y, fill = factor(z,levels=my_rst@data@attributes[[1]][,1], labels=my_rst@data@attributes[[1]][,2]))) +   scale_fill_manual(values=c(colhabs), name=leg, drop=F,breaks=breaks)
   } else{
+
+
+
     p=p+geom_tile(data = rasterpoints , aes(x = x, y = y, fill = z))+
-      scale_fill_gradientn(colours =scale_color_2(col.palette,newcolhabs),name=leg)
+      scale_fill_gradientn(colours =scale_color_2(col.palette,newcolhabs),name=leg,breaks=breaks, limits=range(breaks))
   }
 
   limits<-attr(p, 'limits')
@@ -229,6 +234,7 @@ map_style<-function(data,get,coords, p,main="",subtitle="",cex.axes=13,cex.lab=1
 
           panel.border = element_rect(fill=NA,color="black", size=0.5, linetype="solid"),
 
+          legend.key.size = unit(key.height, 'pt'),
           axis.text=element_text(size=cex.axes),
           axis.title=element_text(size=cex.lab,face="bold"),
           plot.title=element_text(size=cex.main),
@@ -258,8 +264,16 @@ map_style<-function(data,get,coords, p,main="",subtitle="",cex.axes=13,cex.lab=1
     layer<-st_transform(layer,crs=st_crs(st_as_sf(base_shape)))
     p<-p+geom_sf(data=layer, fill=mylighten(layer_col,lighten), color=layer_shape_border,lty=1) + coord_sf(xlim = c(bbox[1,]), ylim = c(bbox[2,]), expand = FALSE)
   }
-  p<-p+annotation_scale(location = "br", width_hint = 0.15) +
-    annotation_north_arrow(location = "tl", which_north = "true", pad_x = unit(.1, "in"), pad_y = unit(0.1, "in"), style = north_arrow_fancy_orienteering)
+
+
+  p<-p+annotation_scale(location = "br", width_hint = width_hint,text_cex=cex_scabar,height  =unit(cex_scabar/4,"cm")) +
+    annotation_north_arrow(location = "tl",
+                           which_north = "true",
+                           width = unit(keyscale, "pt"),
+                           height  = unit(keyscale, "pt"),
+                           pad_x = unit(.1, "in"),
+                           pad_y = unit(0.1, "in"),
+                           style = north_arrow_fancy_orienteering)
   p
 
 }

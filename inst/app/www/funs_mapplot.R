@@ -80,7 +80,7 @@ plotshape<-function(shape){
 }
 
 #' @export
-map_discrete_variable<-function(data,get,coords,base_shape=NULL,layer_shape=NULL,main="",size=.14,cex.main=15,cex.axes=13,cex.lab=15,cex.sub=14,cex.leg=11,cex.pt=7,subtitle="",leg="", factors=NULL,showcoords=F, cex.coords=NULL, col.coords="firebrick",col.palette='turbo',col.fac="firebrick",symbol=15, scalesize_size=T,scalesize_color=T, points=T, cex.fac=4, as_factor=F,bmu=F, colored_by_factor=NULL,showguides=F, limits=NULL,layer_col="gray",lighten=0.5,base_col="white",base_lighten=1,newcolhabs, extralayers=NULL,  data_depth=if(!is.null(extralayers)){3+(length(extralayers$layers)*2)} else{NULL},breaks_len=5,mybreaks=NULL,cexmin.pt=0,layer_shape_border="Grey",base_shape_border="gray"
+map_discrete_variable<-function(data,get,coords,base_shape=NULL,layer_shape=NULL,main="",size=.14,cex.main=15,cex.axes=13,cex.lab=15,cex.sub=14,cex.leg=11,cex.pt=7,subtitle="",leg="", factors=NULL,showcoords=F, cex.coords=NULL, col.coords="firebrick",col.palette='turbo',col.fac="firebrick",symbol=15, scalesize_size=T,scalesize_color=T, points=T, cex.fac=4, as_factor=F,bmu=F,key.height=1, colored_by_factor=NULL,showguides=F, limits=NULL,layer_col="gray",lighten=0.5,base_col="white",base_lighten=1,newcolhabs, extralayers=NULL,  data_depth=if(!is.null(extralayers)){3+(length(extralayers$layers)*2)} else{NULL},breaks_len=5,mybreaks=NULL,cexmin.pt=0,layer_shape_border="Grey",base_shape_border="gray", keyscale=12,  width_hint=0.15,cex_scabar=0.7
                                ){
 
   {
@@ -239,8 +239,14 @@ if(isTRUE(showguides)){
 p<-p+
   #guides( colour = guide_legend())+
 
-  annotation_scale(location = "br", width_hint = 0.15) +
-  annotation_north_arrow(location = "tl", which_north = "true", pad_x = unit(.1, "in"), pad_y = unit(0.1, "in"), style = north_arrow_fancy_orienteering) +
+  annotation_scale(location = "br", width_hint = width_hint,text_cex=cex_scabar,height  =unit(cex_scabar/4,"cm")) +
+  annotation_north_arrow(location = "tl",
+                         which_north = "true",
+                         width = unit(keyscale, "pt"),
+                         height  = unit(keyscale, "pt"),
+                         pad_x = unit(.1, "in"),
+                         pad_y = unit(0.1, "in"),
+                         style = north_arrow_fancy_orienteering) +
   coord_sf(xlim = c(bbox[1,]), ylim = c(bbox[2,]), expand = FALSE) +
 
 
@@ -250,6 +256,7 @@ p<-p+
   theme(panel.grid.major = element_blank(),
         panel.background=element_rect(fill=NA, color="white"),
         panel.border = element_rect(fill=NA,color="black", size=0.5, linetype="solid"),
+        legend.key.size = unit(key.height, 'pt'),
         axis.line=element_line(),
         axis.text=element_text(size=cex.axes),
         axis.title=element_text(size=cex.lab,face="bold"),

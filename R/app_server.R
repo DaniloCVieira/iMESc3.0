@@ -1996,8 +1996,32 @@ app_server <- function(input, output, session) {
   observeEvent(input$pt_titlemap,{
     vals$pt_titlemap<-input$pt_titlemap
   })
+  observeEvent(input$cex.key,{
+    vals$cex.key<-input$cex.key
+  })
+  observeEvent(input$key.height,{
+    vals$key.height<-input$key.height
+  })
+  observeEvent(input$keyscale,{
+    vals$keyscale<-input$keyscale
+  })
+
+  observeEvent(input$scabarsize,{
+    vals$scabarsize<-input$scabarsize
+  })
+  observeEvent(input$scabartextsize,{
+    vals$scabartextsize<-input$scabartextsize
+  })
   output$show_map_axes<-renderUI({
     #req(!isTRUE(input$surface_map))
+    if(is.null(vals$cex.key)){vals$cex.key<-12}
+    if(is.null(vals$key.height)){vals$key.height<-12}
+    if(is.null(vals$keyscale)){vals$keyscale<-12}
+
+    if(is.null(vals$scabarsize)){vals$scabarsize<-0.2}
+    if(is.null(vals$scabartextsize)){vals$scabartextsize<-1}
+
+
     div(
 
 
@@ -2014,30 +2038,61 @@ app_server <- function(input, output, session) {
                     inline(numericInput("pt_titlemap",NULL, vals$pt_titlemap,width="100px"))
              )),
       column(12,' +	Legend:',
-             column(12,
-                    '+ label',
-                    inline(textInput("map_legend",NULL,input$var_map, placeholder = "legend", width="150px"))
-             ),
-             column(12,uiOutput("breaks_map")))
-    )
-  })
-  output$breaks_map<-renderUI({
-    req(input$cmap=="discrete")
-    req(input$choices_map=="Numeric-Attribute")
-    req(input$var_map)
-    pic<-filtermap()
-    data<-getdata_map()
-    vector<-na.omit(data[pic,input$var_map])
-    my<-pretty(vector)
-    my<-my[which(my>min(vector))]
-    my<-my[which(my<max(vector))]
-    div(
+             div(style="padding-left: 15px",
+               column(12,
+                      '+ label',
+                      inline(textInput("map_legend",NULL,input$var_map, placeholder = "legend", width="150px"))
+               ),
+               column(12,
+                      '+ Size:',
+                      inline(numericInput("cex.key",NULL, vals$cex.key,width="100px"))
+               ),
+               column(12,
+                      '+ key height:',
+                      inline(numericInput("key.height",NULL, vals$key.height,width="100px"))
+               ),
+               column(12,
+                      '+ North size:',
+                      inline(numericInput("keyscale",NULL, vals$keyscale,width="100px"))
+               ),
+               column(12,
+                      '+ Scale bar size:',
+                      inline(numericInput("scabarsize",NULL, vals$scabarsize,width="100px"))
+               ),
+               column(12,
+                      '+ Scale bar text size:',
+                      inline(numericInput("scabartextsize",NULL, vals$scabartextsize,width="100px"))
+               ),
 
-      tipify(icon(verify_fa = FALSE,name=NULL,class="fas fa-question-circle",style="color: gray"),"Enter a vector of breaks (comma delimited, within the data range)", options=list(container="body")),
-      "+ breaks",
-      textInput('breaks_map', NULL, paste(my, collapse = ", "), width="200px")
+               column(12,uiOutput("breaks_map"))
+             ))
     )
   })
+
+  observeEvent(input$var_map,{
+    output$breaks_map<-renderUI({
+      #req(input$cmap=="discrete")
+      req(input$choices_map=="Numeric-Attribute")
+      req(input$var_map)
+      pic<-filtermap()
+      data<-getdata_map()
+      req(input$var_map%in%colnames(data))
+      vector<-na.omit(data[,input$var_map])
+      my<-pretty(vector)
+      if(input$cmap=="discrete"){
+        vector<-na.omit(data[pic,input$var_map])
+        my<-pretty(vector)
+        my<-my[which(my>min(vector))]
+        my<-my[which(my<max(vector))]}
+      div(
+
+        tipify(icon(verify_fa = FALSE,name=NULL,class="fas fa-question-circle",style="color: gray"),"Enter a vector of breaks (comma delimited, within the data range)", options=list(container="body")),
+        "+ breaks",
+        textInput('breaks_map', NULL, paste(my, collapse = ", "), width="200px")
+      )
+    })
+  })
+
   output$map_side05<-renderUI({
     req(isTRUE(input$mantel_map))
     column(12,class="map_control_style",
@@ -2425,7 +2480,7 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
     div(
 
       downloadButton('down_raster',"*Download geotif", style="button_active"),
-      #actionButton('down_maps_loop',"*Download geotif", style="button_active")
+      #actionButton('down_maps_loop',"*download loop", style="button_active")
 
 
     )})
@@ -2434,15 +2489,17 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
   })
 
   map_raster_loop<-reactive({
-    data<-vals$saved_data[[input$data_map]]
+    datao<-data<-vals$saved_data[[input$data_map]]
     withProgress(max=ncol(data),message="Running",{
+
 
       for(i in 1:ncol(data)) {
 
+        mybreaks<-pretty(datao[,colnames(data)[i]])
         validate(need(input$choices_map=="Numeric-Attribute","This functionality is currently only available for Numeric-Attribute"))
 
 
-        get<-colnames(data)[i]
+        get<-colnames(datao)[i]
         data <- getdata_map()[filtermap(),,drop=F]
         coords<-attr(data,"coords")[rownames(data),]
         base_shape =if(isTRUE(input$map_1a_base)){attr(data,"base_shape") } else { NULL}
@@ -2453,9 +2510,12 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
         req(get%in%colnames(data))
         p0<-p<-mapraster(data,get,coords, base_shape,limits)
 
+
+
         data <- getdata_map()[filtermap(),,drop=F]
         coords<-attr(data,"coords")[rownames(data),]
         layer_shape =if(isTRUE(input$map_1f_layer)){attr(data,"layer_shape") } else { NULL}
+
         p<-map_style(data=data,
                      get=get,
                      coords=coords,
@@ -2466,7 +2526,7 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
                      cex.lab=input$pt_legend,
                      cex.main=input$pt_titlemap,
                      cex.sub=14,
-                     cex.leg=11,
+                     cex.leg=input$cex.key,
                      factors=labcoords(),
                      cex.fac=input$pt_factor+2,
                      col.fac=if(length(input$col_factor)>0){   getcolhabs(vals$newcolhabs,input$col_factor,1) } else{ NULL},
@@ -2481,7 +2541,10 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
                      leg=input$map_legend,
                      newcolhabs=vals$newcolhabs,
                      extralayers=extralayers(),
-                     layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1))
+                     layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1),
+                     breaks=mybreaks,
+                     key.height=input$key.height,
+                    keyscale=input$keyscale,  width_hint=input$scabarsize,cex_scabar=input$scabartextsize)
         attr(p,"args")<-l1()
         attr(p,"limits")<-attr(p0,"limits")
         attr(p,"base_shape")<-attr(p0,"base_shape")
@@ -2495,21 +2558,29 @@ tipify(span('Breakpoints'), "The break points computed", placement = "right")
         #saveRDS(my_rst,paste0(path,get,".rds"))
 
         file<-paste0(get,if(input$var_map_filter1!="None"){paste("-",input$var_map_filter1,input$var_map_filter2)})
+
         pdf(paste0(file,".pdf"), height=vals$cur_fheight, width=vals$cur_fwidth, pointsize = vals$cur_pointsize)
-        beep()
+
+
         plot(vals$map_res)
         graphics.off()
-
+        Sys.sleep(0.5)
 
         png(paste0(file,".png"), height=vals$cur_fheight, width=vals$cur_fwidth, pointsize = vals$cur_pointsize, units="cm",res=300)
-        beep()
+
         plot(vals$map_res)
         graphics.off()
+        Sys.sleep(0.5)
+
+
         raster::writeRaster(my_rst, paste0(file,".tif"),format="GTiff")
         beep()
         graphics.off()
+        Sys.sleep(0.5)
         incProgress(1)
-      }
+
+
+        }
     })
 
   })
@@ -8418,7 +8489,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
         cex.fac=input$pt_factor+2,
         col.fac=input$col_factor,
         cex.axes=input$pt_legend,
-        cex.leg=input$pt_legend,
+        cex.leg=input$cex.key,
         cex.lab=input$pt_legend,
         leg=input$map_legend,
         col.coords=if(length(input$col_coords)>0){   getcolhabs(vals$newcolhabs,input$col_coords,1) } else{ NULL},
@@ -8444,6 +8515,8 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
         data_depth=input$data_depth,
         breaks_len=input$breaks_len,
         mybreaks=mybreaks,
+        key.height=input$key.height,
+       keyscale=input$keyscale,  width_hint=input$scabarsize,cex_scabar=input$scabartextsize,
         layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1),
         base_shape_border= getcolhabs(vals$newcolhabs,input$base_col_border,1),
         cex.main=input$pt_titlemap
@@ -8512,7 +8585,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
         col.fac=input$col_factor,
         cex.axes=input$pt_legend,
         cex.lab=input$pt_legend,
-        cex.leg=input$pt_legend,
+        cex.leg=input$cex.key,
         leg=input$map_legend,
         col.coords=if(length(input$col_coords)>0){   getcolhabs(vals$newcolhabs,input$col_coords,5)[1] } else{ NULL},
         col.palette=col,
@@ -8537,7 +8610,9 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
         data_depth=input$data_depth,
         layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1),
         base_shape_border= getcolhabs(vals$newcolhabs,input$base_col_border,1),
-        cex.main=input$pt_titlemap
+        cex.main=input$pt_titlemap,
+        key.height=input$key.height,
+       keyscale=input$keyscale,  width_hint=input$scabarsize,cex_scabar=input$scabartextsize
       )
     )
 
@@ -8590,6 +8665,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
     data <- getdata_map()[filtermap(),,drop=F]
     coords<-attr(data,"coords")[rownames(data),]
     layer_shape =if(isTRUE(input$map_1f_layer)){attr(data,"layer_shape") } else { NULL}
+    mybreaks<-as.numeric(unlist(strsplit(input$breaks_map,",")))
     p<-map_style(data=data,
                  get=get,
                  coords=coords,
@@ -8600,7 +8676,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
                  cex.lab=input$pt_legend,
                  cex.main=input$pt_titlemap,
                  cex.sub=14,
-                 cex.leg=11,
+                 cex.leg=input$cex.key,
                  factors=labcoords(),
                  cex.fac=input$pt_factor+2,
                  col.fac=if(length(input$col_factor)>0){   getcolhabs(vals$newcolhabs,input$col_factor,1) } else{ NULL},
@@ -8615,7 +8691,10 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
                  leg=input$map_legend,
                  newcolhabs=vals$newcolhabs,
                  extralayers=extralayers(),
-                 layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1)
+                 layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1,),
+                 breaks=mybreaks,
+                 key.height=input$key.height,
+                keyscale=input$keyscale,  width_hint=input$scabarsize,cex_scabar=input$scabartextsize
     )
     attr(p,"args")<-l1()
     attr(p,"limits")<-attr(p0,"limits")
@@ -8671,7 +8750,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
                  cex.lab=input$pt_legend,
                  cex.main=input$pt_titlemap,
                  cex.sub=14,
-                 cex.leg=11,
+                 cex.leg=input$cex.key,
                  factors=labcoords(),
                  cex.fac=input$pt_factor+2,
                  col.fac=if(length(input$col_factor)>0){   getcolhabs(vals$newcolhabs,input$col_factor,1) } else{ NULL},
@@ -8686,7 +8765,10 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
                  leg=input$map_legend,
                  newcolhabs=vals$newcolhabs,
                  extralayers=extralayers(),
-                 layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1))
+                 layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1),
+                 key.height=input$key.height,
+                keyscale=input$keyscale,  width_hint=input$scabarsize,cex_scabar=input$scabartextsize
+                 )
     attr(p,"args")<-l1()
     attr(p,"limits")<-attr(p0,"limits")
     attr(p,"base_shape")<-attr(p0,"base_shape")
@@ -8723,6 +8805,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
     data <- getdata_map()[filtermap(),,drop=F]
     coords<-attr(data,"coords")[rownames(data),]
     layer_shape =if(isTRUE(input$map_1f_layer)){attr(data,"layer_shape") } else { NULL}
+    mybreaks<-as.numeric(unlist(strsplit(input$breaks_map,",")))
     p<-map_style(data=data,
                  get=get,
                  coords=coords,
@@ -8733,7 +8816,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
                  cex.lab=input$pt_legend,
                  cex.main=input$pt_titlemap,
                  cex.sub=14,
-                 cex.leg=11,
+                 cex.leg=input$cex.key,
                  factors=labcoords(),
                  cex.fac=input$pt_factor+2,
                  col.fac=if(length(input$col_factor)>0){   getcolhabs(vals$newcolhabs,input$col_factor,1) } else{ NULL},
@@ -8748,7 +8831,11 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
                  leg=input$map_legend,
                  newcolhabs=vals$newcolhabs,
                  extralayers=extralayers(),
-                 layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1))
+                 layer_shape_border=getcolhabs(vals$newcolhabs,input$layer_col_border,1),
+                 breaks=mybreaks,
+                 key.height=input$key.height,
+                keyscale=input$keyscale,  width_hint=input$scabarsize,cex_scabar=input$scabartextsize
+                 )
     attr(p,"args")<-l1()
     attr(p,"limits")<-attr(p0,"limits")
     attr(p,"base_shape")<-attr(p0,"base_shape")
@@ -9998,6 +10085,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
                             "hc_tab3" = "Hcut",
                             "hc_tab4" = "codebook clusters",
                             "hc_tab5" = "mapcodes predictions",
+                            "hc_tab6" = "Scree plot"
 
     )
     module_ui_figs("downfigs")
@@ -10131,6 +10219,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
                paste("mean of",input$show_mapcode_errors), type="l", lwd=2, col="#05668D",  xlim=c(1,K))
 
         grid(ny=res_mean)
+        vals$hc_tab2_plot<-recordPlot()
         #legend("topl",lty=c(1,2),legend=c(input$data_mapcode,input$data_mapcode2), bty="n")
       })
     })
@@ -10317,7 +10406,7 @@ if(is.null(menu_steps$anext)&is.null(menu_steps$prev)){
     if(input$mapcode_p_dotlabel == 'symbols'){ T} else {F}
   })
   mapcode<-reactive({
-    map(getmodel_hc(),as.matrix(vals$saved_data[[input$data_mapcode]]))
+    kohonen::map(getmodel_hc(),as.matrix(vals$saved_data[[input$data_mapcode]]))
   })
   output$mapcode_pCodes<-renderPlot({
 

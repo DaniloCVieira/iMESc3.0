@@ -1852,7 +1852,7 @@ output$saved_rfs<-renderUI({
                  ),
                  hr(),
                  div(
-                   p(strong("Observations:")),
+                   p(strong("Observations (Top trees):")),
                    inline(DT::dataTableOutput(ns('rf_tab_errors_pred')))
                  )
                )
@@ -1962,6 +1962,12 @@ output$saved_rfs<-renderUI({
                   numericInput(ns("rf_round_3_2"),NULL,value=3,width="75px")
                 )
               ),
+              div("+ Top trees:",
+                  inline(
+                    numericInput(ns("q_class_toptrees2"),NULL, value=vals$q_class_toptrees , width="100px")
+                  ),
+                  bsTooltip('q_class_toptrees2',"Selects the N top trees with best R squared")
+              ),
               div(
                 tipify(
                   actionLink(
@@ -2005,8 +2011,21 @@ output$saved_rfs<-renderUI({
 
     pred<-predall_rf()
     obs<-RF_observed()
+    m<-vals$RF_results
+    vals$tree_rs<-data.frame(do.call(rbind,lapply(data.frame(pred$individual),function(x)
+      postResample(x,obs))))
+    if(m$modelType=="Regression"){
+      pic<-order(vals$tree_rs$Rsquared, decreasing=T)[1:input$q_class_toptrees2]
+    } else{
+      pic<-order(vals$tree_rs$Accuracy, decreasing=T)[1:input$q_class_toptrees2]
+    }
+
+    pred$individual<-data.frame(pred$individual[,pic])
+    rownames(pred$individual)<-rownames(test_rf())
     req(length(pred)>0)
     req(length(obs)>0)
+
+
     temp<-switch(vals$RF_results$modelType,
                  "Regression"=RFerror_reg(pred,obs),
                  "Classification" =data.frame(RFerror_class(pred,obs)))
